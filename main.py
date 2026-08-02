@@ -25,7 +25,6 @@ def enrich_with_geo(servers):
     """Récupère les pays pour toutes les IP en une seule requête (Batch API)"""
     if not servers: return
     
-    # L'API accepte jusqu'à 100 requêtes d'un coup. On découpe par blocs de 100.
     for i in range(0, len(servers), 100):
         chunk = servers[i:i+100]
         queries = [{"query": s["ip"], "fields": "countryCode"} for s in chunk]
@@ -43,8 +42,8 @@ def enrich_with_geo(servers):
                     code = res.get("countryCode", "XX")
                     s["country_code"] = code
                     if code != "XX":
-                        # Utilisation d'images fiables au lieu des emojis (contourne le bug Windows)
-                        s["flag"] = f'<img src="https://flagcdn.com/24x18/{code.lower()}.png" width="24" height="18" alt="{code}" style="vertical-align: middle; border-radius: 2px;">'
+                        # Utilisation de flagcdn.io
+                        s["flag"] = f'<img src="https://flagcdn.io/24x18/{code.lower()}.png" width="24" height="18" alt="{code}" style="vertical-align: middle; border-radius: 2px; box-shadow: 0 0 2px rgba(0,0,0,0.3);">'
                     else:
                         s["flag"] = "❓"
         except Exception as e:
@@ -166,8 +165,11 @@ def generate_html(servers):
         .container {{ max-width: 1200px; margin: auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
         
         .top-bar {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }}
-        h1 {{ color: var(--header); margin: 0; font-size: 24px; }}
-        select#lang {{ padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; cursor: pointer; }}
+        h1 {{ color: var(--header); margin: 0; font-size: 24px; display: flex; align-items: center; }}
+        
+        .lang-selector {{ display: flex; gap: 10px; }}
+        .lang-selector img {{ cursor: pointer; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s, box-shadow 0.2s; }}
+        .lang-selector img:hover {{ transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,0.4); }}
         
         .info-panel {{ background: #e8f4fd; padding: 15px; border-left: 4px solid var(--primary); border-radius: 4px; margin-bottom: 20px; font-size: 14px; }}
         .btn {{ display: inline-block; padding: 10px 18px; background: var(--primary); color: white; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background 0.3s; }}
@@ -186,12 +188,15 @@ def generate_html(servers):
 <body>
     <div class="container">
         <div class="top-bar">
-            <h1 id="page-title">🌐 Active eD2k Servers</h1>
-            <select id="lang" onchange="changeLang(this.value)">
-                <option value="en">🇬🇧 English</option>
-                <option value="fr">🇫🇷 Français</option>
-                <option value="es">🇪🇸 Español</option>
-            </select>
+            <h1>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/EMule_mascot.svg" alt="eMule" width="40" height="40" style="margin-right: 12px;">
+                <span id="page-title">Active eD2k Servers</span>
+            </h1>
+            <div class="lang-selector">
+                <img src="https://flagcdn.io/24x18/gb.png" alt="English" title="English" onclick="changeLang('en')">
+                <img src="https://flagcdn.io/24x18/fr.png" alt="Français" title="Français" onclick="changeLang('fr')">
+                <img src="https://flagcdn.io/24x18/es.png" alt="Español" title="Español" onclick="changeLang('es')">
+            </div>
         </div>
 
         <div class="info-panel">
@@ -236,15 +241,15 @@ def generate_html(servers):
     <script>
         const translations = {
             en: {
-                title: "🌐 Active eD2k Servers", update: "Last update:", download: "⬇️ Download server.met", copy: "Copy this file's URL into your eMule settings for automatic updates.",
+                title: "Active eD2k Servers", update: "Last update:", download: "⬇️ Download server.met", copy: "Copy this file's URL into your eMule settings for automatic updates.",
                 thFlag: "Geo ↕", thName: "Name ↕", thDesc: "Description ↕", thVersion: "Version ↕", thIP: "IP:Port ↕", thUsers: "Users ↕", thFiles: "Files ↕"
             },
             fr: {
-                title: "🌐 Serveurs eD2k Actifs", update: "Dernière mise à jour :", download: "⬇️ Télécharger server.met", copy: "Copiez l'URL de ce fichier dans les paramètres d'eMule pour la mise à jour automatique.",
+                title: "Serveurs eD2k Actifs", update: "Dernière mise à jour :", download: "⬇️ Télécharger server.met", copy: "Copiez l'URL de ce fichier dans les paramètres d'eMule pour la mise à jour automatique.",
                 thFlag: "Géo ↕", thName: "Nom ↕", thDesc: "Description ↕", thVersion: "Version ↕", thIP: "IP:Port ↕", thUsers: "Utilisateurs ↕", thFiles: "Fichiers ↕"
             },
             es: {
-                title: "🌐 Servidores eD2k Activos", update: "Última actualización:", download: "⬇️ Descargar server.met", copy: "Copie la URL de este archivo en eMule para actualizaciones automáticas.",
+                title: "Servidores eD2k Activos", update: "Última actualización:", download: "⬇️ Descargar server.met", copy: "Copie la URL de este archivo en eMule para actualizaciones automáticas.",
                 thFlag: "Geo ↕", thName: "Nombre ↕", thDesc: "Descripción ↕", thVersion: "Versión ↕", thIP: "IP:Puerto ↕", thUsers: "Usuarios ↕", thFiles: "Archivos ↕"
             }
         };
@@ -341,7 +346,6 @@ def main():
         enrich_with_geo(active_servers)
         
         print("\n--- 3. Tri et Génération ---")
-        # LE TRI PAR DÉFAUT : On trie la liste Python par le nombre de fichiers décroissant
         active_servers.sort(key=lambda s: s['stats']['files'], reverse=True)
         
         generate_server_met(active_servers)
