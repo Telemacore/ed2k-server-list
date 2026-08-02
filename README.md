@@ -1,4 +1,4 @@
-# Active eD2k Servers List
+# Active eD2k Server List
 
 <p>
   <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/EMule_mascot.svg" alt="eMule" width="70">
