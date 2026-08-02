@@ -22,7 +22,6 @@ def ip_to_int(ip):
 
 # --- LOGIQUE GeoIP (BATCH OPTIMISÉ) ---
 def enrich_with_geo(servers):
-    """Récupère les pays pour toutes les IP en une seule requête (Batch API)"""
     if not servers: return
     
     for i in range(0, len(servers), 100):
@@ -125,21 +124,23 @@ def get_server_info(ip, tcp_port):
         
     return info if info['active'] else None
 
-# --- GÉNÉRATION FICHIERS ---
+# --- GÉNÉRATION FICHIERS BINAIRES (CORRIGÉE) ---
 def write_tag_string_id(tag_id, value):
-    """Encode un tag eD2k de type String (0x02)"""
+    """Encode un tag eD2k String avec le bit bNameIsID (0x80) obligatoire"""
     val_bytes = value.encode('utf-8', errors='ignore')
-    tag = struct.pack("<B H B H", 2, 1, tag_id, len(val_bytes))
+    # 0x82 = Type String (0x02) | bNameIsID (0x80)
+    tag = struct.pack("<B B H", 0x82, tag_id, len(val_bytes))
     tag += val_bytes
     return tag
 
 def write_tag_uint32_id(tag_id, value):
-    """Encode un tag eD2k de type Entier 32bits (0x03)"""
-    return struct.pack("<B H B I", 3, 1, tag_id, int(value))
+    """Encode un tag eD2k Uint32 avec le bit bNameIsID (0x80) obligatoire"""
+    # 0x83 = Type Uint32 (0x03) | bNameIsID (0x80)
+    return struct.pack("<B B I", 0x83, tag_id, int(value))
 
 def generate_server_met(servers):
     with open(MET_FILE, "wb") as f:
-        f.write(struct.pack("<B", 0xE0)) # Header
+        f.write(struct.pack("<B", 0xE0)) # Header eD2k
         f.write(struct.pack("<I", len(servers))) # Nombre de serveurs
         
         for s in servers:
@@ -149,13 +150,19 @@ def generate_server_met(servers):
             tags = []
             stats = s['stats']
             
-            # Tags eDonkey standards
-            if stats.get('name'): tags.append(write_tag_string_id(1, stats['name']))
-            if stats.get('desc'): tags.append(write_tag_string_id(2, stats['desc']))
+            # Application stricte des identifiants (IDs) officiels eMule
+            if stats.get('name'): 
+                tags.append(write_tag_string_id(1, stats['name'])) # 1 = ST_SERVERNAME
+            if stats.get('desc'): 
+                tags.append(write_tag_string_id(11, stats['desc'])) # 11 = ST_DESCRIPTION
             if stats.get('version') and stats['version'] != 'Inconnue': 
-                tags.append(write_tag_string_id(7, stats['version']))
-            if stats.get('users'): tags.append(write_tag_uint32_id(8, stats['users'])) # 8 = ST_MAXUSERS / Users
-            if stats.get('files'): tags.append(write_tag_uint32_id(9, stats['files'])) # 9 = ST_SOFTFILES
+                tags.append(write_tag_string_id(17, stats['version'])) # 17 = ST_VERSION
+            
+            # Utilisateurs et Fichiers
+            if stats.get('users'): 
+                tags.append(write_tag_uint32_id(8, stats['users'])) # 8 = ST_USERS
+            if stats.get('files'): 
+                tags.append(write_tag_uint32_id(9, stats['files'])) # 9 = ST_FILES
                 
             f.write(struct.pack("<I", len(tags)))
             for tag in tags:
