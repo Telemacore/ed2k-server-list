@@ -42,8 +42,8 @@ def enrich_with_geo(servers):
                     code = res.get("countryCode", "XX")
                     s["country_code"] = code
                     if code != "XX":
-                        # Utilisation de flagcdn.io
-                        s["flag"] = f'<img src="https://flagcdn.io/24x18/{code.lower()}.png" width="24" height="18" alt="{code}" style="vertical-align: middle; border-radius: 2px; box-shadow: 0 0 2px rgba(0,0,0,0.3);">'
+                        # Utilisation de l'URL SVG officielle de flagcdn.io
+                        s["flag"] = f'<img src="https://flagcdn.io/{code.lower()}.svg" width="24" height="18" alt="{code}" style="vertical-align: middle; border-radius: 2px; box-shadow: 0 0 2px rgba(0,0,0,0.3);">'
                     else:
                         s["flag"] = "❓"
         except Exception as e:
@@ -159,6 +159,8 @@ def generate_html(servers):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active eD2k Servers</title>
+    <!-- Ajout du logo eMule en Favicon -->
+    <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/4/4a/EMule_mascot.svg">
     <style>
         :root {{ --bg: #f4f4f9; --text: #333; --primary: #3498db; --header: #2c3e50; }}
         body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }}
@@ -193,9 +195,10 @@ def generate_html(servers):
                 <span id="page-title">Active eD2k Servers</span>
             </h1>
             <div class="lang-selector">
-                <img src="https://flagcdn.io/24x18/gb.png" alt="English" title="English" onclick="changeLang('en')">
-                <img src="https://flagcdn.io/24x18/fr.png" alt="Français" title="Français" onclick="changeLang('fr')">
-                <img src="https://flagcdn.io/24x18/es.png" alt="Español" title="Español" onclick="changeLang('es')">
+                <!-- Utilisation du nouveau format SVG flagcdn.io -->
+                <img src="https://flagcdn.io/gb.svg" width="24" height="18" alt="English" title="English" onclick="changeLang('en')">
+                <img src="https://flagcdn.io/fr.svg" width="24" height="18" alt="Français" title="Français" onclick="changeLang('fr')">
+                <img src="https://flagcdn.io/es.svg" width="24" height="18" alt="Español" title="Español" onclick="changeLang('es')">
             </div>
         </div>
 
