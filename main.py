@@ -5,8 +5,6 @@ import datetime
 import urllib.request
 import json
 import time
-import sys
-import zlib
 import random
 
 # --- CONFIGURATION ---
@@ -14,7 +12,6 @@ INPUT_FILE = "servers.txt"
 OUTPUT_DIR = "public"
 MET_FILE = os.path.join(OUTPUT_DIR, "server.met")
 HTML_FILE = os.path.join(OUTPUT_DIR, "index.html")
-TIMEOUT = 4.0 # Secondes d'attente max
 
 def ensure_dir(directory):
     if not os.path.exists(directory):
@@ -37,205 +34,87 @@ def get_country_info(ip):
     except:
         return "❓", "XX"
 
-# --- LOGIQUE eD2K (Parseur UDP/TCP) ---
+# --- LOGIQUE eD2K (UDP Uniquement) ---
 def parse_ed2k_tags(payload, offset, num_tags):
-    """Décode les Tags eDonkey/eMule (TLV) avec gestion stricte du bit 0x80 (bNameIsID)"""
+    """Décode la liste des Tags renvoyée par le serveur."""
     tags = {}
     for _ in range(num_tags):
         if offset >= len(payload): break
             
-        tag_type_full = payload[offset]
+        tag_type = payload[offset] & 0x7F
         offset += 1
         
-        bNameIsID = (tag_type_full & 0x80) != 0
-        tag_type = tag_type_full & 0x7F 
+        if offset + 2 > len(payload): break
+        name_len = struct.unpack_from("<H", payload, offset)[0]
+        offset += 2
+        if offset + name_len > len(payload): break
         
-        name = None
-        if bNameIsID:
-            if offset + 1 > len(payload): break
-            name = payload[offset]
-            offset += 1
-        else:
-            if offset + 2 > len(payload): break
-            name_len = struct.unpack_from("<H", payload, offset)[0]
-            offset += 2
-            if offset + name_len > len(payload): break
-            
-            if name_len == 1:
-                name = payload[offset]
-            else:
-                name = payload[offset:offset+name_len].decode('latin1', errors='ignore')
-            offset += name_len
+        name = payload[offset] if name_len == 1 else None
+        offset += name_len
             
         val = None
-        if tag_type == 0x01: # Hash
-            if offset + 16 > len(payload): break
-            val = payload[offset:offset+16]
-            offset += 16
-        elif tag_type == 0x02: # String
-            if offset + 2 > len(payload): break
+        if tag_type == 0x02: # String
             val_len = struct.unpack_from("<H", payload, offset)[0]
             offset += 2
-            if offset + val_len > len(payload): break
-            try:
-                val = payload[offset:offset+val_len].decode('utf-8')
-            except UnicodeDecodeError:
-                val = payload[offset:offset+val_len].decode('latin1', errors='ignore')
+            try: val = payload[offset:offset+val_len].decode('utf-8', errors='ignore')
+            except: val = payload[offset:offset+val_len].decode('latin1', errors='ignore')
             offset += val_len
         elif tag_type == 0x03: # Uint32
-            if offset + 4 > len(payload): break
             val = struct.unpack_from("<I", payload, offset)[0]
             offset += 4
-        elif tag_type == 0x04: # Float32
-            if offset + 4 > len(payload): break
-            val = struct.unpack_from("<f", payload, offset)[0]
-            offset += 4
-        elif tag_type == 0x08: # Uint16
-            if offset + 2 > len(payload): break
-            val = struct.unpack_from("<H", payload, offset)[0]
-            offset += 2
-        elif tag_type == 0x09: # Uint8
-            if offset + 1 > len(payload): break
-            val = payload[offset]
-            offset += 1
-        elif tag_type in (0x11, 0x07): # Blob
-            if offset + 4 > len(payload): break
-            val_len = struct.unpack_from("<I", payload, offset)[0]
-            offset += 4
-            if offset + val_len > len(payload): break
-            val = payload[offset:offset+val_len]
-            offset += val_len
         else:
             break
             
-        if name is not None:
+        if name is not None and val is not None:
             tags[name] = val
-        
-    return tags, offset
+            
+    return tags
 
-def get_server_info_udp(ip, tcp_port):
-    """Interrogation UDP de aMule"""
+def get_server_info(ip, tcp_port):
+    """Interroge le serveur en UDP (Méthode officielle, instantanée et non-bloquante)"""
     udp_port = tcp_port + 4
     info = {
-        'active': False, 'users': 0, 'files': 0, 'max_users': 0, 
-        'name': f'Server ({ip})', 'desc': 'Aucune description', 'method': f'UDP'
+        'active': False, 'name': 'Inconnu', 'desc': 'Aucune description', 
+        'version': 'Inconnue', 'users': 0, 'files': 0
     }
+    
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(2.0)
     
-    # Statistiques
+    # 1. REQUÊTE UTILISATEURS / FICHIERS (0x96)
     challenge_stat = random.randint(1, 0xFFFFFFFF)
     try:
         sock.sendto(struct.pack("<BBI", 0xE3, 0x96, challenge_stat), (ip, udp_port))
-        start = time.time()
-        while time.time() - start < 2.0:
-            try:
-                data, _ = sock.recvfrom(1024)
-                if len(data) >= 14 and data[0] == 0xE3 and data[1] == 0x97: 
-                    resp_challenge, users, files = struct.unpack_from("<III", data, 2)
-                    if resp_challenge == challenge_stat:
-                        info['users'], info['files'] = users, files
-                        if len(data) >= 18:
-                            info['max_users'] = struct.unpack_from("<I", data, 14)[0]
-                        info['active'] = True
-                        break
-            except socket.timeout: break
-    except: pass
+        data, _ = sock.recvfrom(1024)
+        if len(data) >= 14 and data[0] == 0xE3 and data[1] == 0x97: 
+            resp_challenge, users, files = struct.unpack_from("<III", data, 2)
+            if resp_challenge == challenge_stat:
+                info['users'], info['files'] = users, files
+    except Exception: pass
                 
-    # Description
+    # 2. REQUÊTE NOM / DESCRIPTION / VERSION (0xA2)
     challenge_desc = (random.randint(1, 65535) << 16) | 0xF0FF
     try:
         sock.sendto(struct.pack("<BBI", 0xE3, 0xA2, challenge_desc), (ip, udp_port))
-        start = time.time()
-        while time.time() - start < 2.0:
-            try:
-                data, _ = sock.recvfrom(4096)
-                if len(data) >= 2 and data[0] == 0xE3 and data[1] == 0xA3: 
-                    if len(data) >= 6:
-                        resp_challenge = struct.unpack_from("<I", data, 2)[0]
-                        if resp_challenge == challenge_desc and len(data) >= 10:
-                            tag_count = struct.unpack_from("<I", data, 6)[0]
-                            tags, _ = parse_ed2k_tags(data, 10, tag_count)
-                            if 0x01 in tags: info['name'] = str(tags[0x01])
-                            if 0x0B in tags: info['desc'] = str(tags[0x0B])
-                    info['active'] = True
-                    break
-            except socket.timeout: break
-    except: pass
+        data, _ = sock.recvfrom(4096)
+        if len(data) >= 10 and data[0] == 0xE3 and data[1] == 0xA3: 
+            resp_challenge = struct.unpack_from("<I", data, 2)[0]
+            if resp_challenge == challenge_desc:
+                tag_count = struct.unpack_from("<I", data, 6)[0]
+                tags = parse_ed2k_tags(data, 10, tag_count)
+                
+                if 0x01 in tags: info['name'] = str(tags[0x01])
+                if 0x0B in tags: info['desc'] = str(tags[0x0B])
+                if 0x91 in tags:
+                    v = tags[0x91]
+                    info['version'] = f"{v >> 16}.{v & 0xFFFF}" if isinstance(v, int) else str(v)
+    except Exception: pass
     finally: sock.close()
         
-    return info if info['active'] else None
-
-def get_server_info_tcp(ip, port):
-    """Fallback TCP"""
-    info = {
-        'active': False, 'users': 0, 'files': 0, 'max_users': 0, 
-        'name': f'Server ({ip})', 'desc': 'Aucune description', 'method': 'TCP'
-    }
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(5.0)
-    
-    try:
-        sock.connect((ip, port))
-        
-        username = b"http://www.emule-project.net"
-        tag_user = struct.pack("<BHB", 0x02, 1, 0x01) + struct.pack("<H", len(username)) + username
-        tags_data = tag_user + struct.pack("<BHBI", 0x03, 1, 0x11, 0x3C) + struct.pack("<BHBI", 0x03, 1, 0x0F, 4662) + struct.pack("<BHBI", 0x03, 1, 0xFB, 0x003C0000) + struct.pack("<BHBI", 0x03, 1, 0x20, 0x1D)
-        
-        payload = struct.pack("<16sIHI", os.urandom(16), 0, 4662, 5) + tags_data
-        sock.send(struct.pack("<BI", 0xE3, len(payload) + 1) + struct.pack("<B", 0x01) + payload)
-        
-        start_time = time.time()
-        found_status = found_ident = False
-        
-        while time.time() - start_time < 5.0:
-            if found_status and found_ident: break
-            try: header = sock.recv(5)
-            except socket.timeout: break
-            if not header or len(header) < 5: break
-                
-            protocol, packet_len = struct.unpack("<BI", header)
-            if packet_len == 0 or packet_len > 1024*1024: continue
-                
-            data = b""
-            while len(data) < packet_len:
-                chunk = sock.recv(min(packet_len - len(data), 4096))
-                if not chunk: break
-                data += chunk
-            if len(data) < packet_len: break
-                
-            if protocol == 0xD4:
-                try: data = zlib.decompress(data)
-                except: continue
-
-            if not data: continue
-            pkt_opcode, pkt_payload = data[0], data[1:]
-            
-            if pkt_opcode == 0x05: 
-                break
-            elif pkt_opcode == 0x18: break
-            elif pkt_opcode == 0x34:
-                if len(pkt_payload) >= 8:
-                    info['users'], info['files'] = struct.unpack("<II", pkt_payload[:8])
-                    found_status = True
-            elif pkt_opcode == 0x32:
-                if len(pkt_payload) >= 26:
-                    tag_count = struct.unpack_from("<I", pkt_payload, 22)[0]
-                    tags, _ = parse_ed2k_tags(pkt_payload, 26, tag_count)
-                    if 0x01 in tags: info['name'] = str(tags[0x01])
-                    if 0x0B in tags: info['desc'] = str(tags[0x0B])
-                    found_ident = True
-                    
-        if found_status or found_ident: info['active'] = True
-    except: pass
-    finally: sock.close()
+    if info['users'] > 0 or info['name'] != 'Inconnu':
+        info['active'] = True
         
     return info if info['active'] else None
-
-def get_server_info(ip, port):
-    info = get_server_info_udp(ip, port)
-    if info: return info
-    return get_server_info_tcp(ip, port)
 
 # --- GÉNÉRATION FICHIERS ---
 def write_tag_string_id(tag_id, value):
@@ -289,8 +168,8 @@ def generate_html(servers):
         th:hover {{ background: #34495e; }}
         tr:hover {{ background-color: #f9f9f9; }}
         .num {{ font-family: monospace; font-size: 13px; text-align: right; }}
-        .desc-col {{ max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .tag {{ font-size: 10px; background: #ddd; padding: 2px 5px; border-radius: 3px; margin-left: 5px; }}
+        .desc-col {{ max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .tag {{ font-size: 11px; background: #eee; padding: 3px 6px; border-radius: 4px; margin-left: 5px; color: #555; }}
     </style>
 </head>
 <body>
@@ -317,24 +196,23 @@ def generate_html(servers):
                         <th onclick="sortTable(0)" id="th-flag">Geo ↕</th>
                         <th onclick="sortTable(1)" id="th-name">Name ↕</th>
                         <th onclick="sortTable(2)" id="th-desc">Description ↕</th>
-                        <th onclick="sortTable(3)" id="th-ip">IP:Port ↕</th>
-                        <th onclick="sortTable(4)" style="text-align:right" id="th-users">Users ↕</th>
-                        <th onclick="sortTable(5)" style="text-align:right" id="th-max">Max Users ↕</th>
+                        <th onclick="sortTable(3)" id="th-version">Version ↕</th>
+                        <th onclick="sortTable(4)" id="th-ip">IP:Port ↕</th>
+                        <th onclick="sortTable(5)" style="text-align:right" id="th-users">Users ↕</th>
                         <th onclick="sortTable(6)" style="text-align:right" id="th-files">Files ↕</th>
                     </tr>
                 </thead>
                 <tbody>"""
 
     for s in servers:
-        meth_tag = f'<span class="tag">{s["stats"]["method"]}</span>'
         html += f"""
                     <tr>
                         <td title="{s['country_code']}">{s['flag']}</td>
-                        <td style="font-weight: bold;">{s['stats']['name']} {meth_tag}</td>
+                        <td style="font-weight: bold;">{s['stats']['name']}</td>
                         <td class="desc-col" title="{s['stats']['desc']}">{s['stats']['desc']}</td>
+                        <td><span class="tag">{s['stats']['version']}</span></td>
                         <td class="num">{s['ip']}:{s['port']}</td>
                         <td class="num">{s['stats']['users']:,}</td>
-                        <td class="num">{s['stats']['max_users']:,}</td>
                         <td class="num">{s['stats']['files']:,}</td>
                     </tr>"""
     
@@ -348,15 +226,15 @@ def generate_html(servers):
         const translations = {
             en: {
                 title: "🌐 Active eD2k Servers", update: "Last update:", download: "⬇️ Download server.met", copy: "Copy this file's URL into your eMule settings for automatic updates.",
-                thFlag: "Geo ↕", thName: "Name ↕", thDesc: "Description ↕", thIP: "IP:Port ↕", thUsers: "Users ↕", thMax: "Max Users ↕", thFiles: "Files ↕"
+                thFlag: "Geo ↕", thName: "Name ↕", thDesc: "Description ↕", thVersion: "Version ↕", thIP: "IP:Port ↕", thUsers: "Users ↕", thFiles: "Files ↕"
             },
             fr: {
                 title: "🌐 Serveurs eD2k Actifs", update: "Dernière mise à jour :", download: "⬇️ Télécharger server.met", copy: "Copiez l'URL de ce fichier dans les paramètres d'eMule pour la mise à jour automatique.",
-                thFlag: "Géo ↕", thName: "Nom ↕", thDesc: "Description ↕", thIP: "IP:Port ↕", thUsers: "Utilisateurs ↕", thMax: "Max Utilisateurs ↕", thFiles: "Fichiers ↕"
+                thFlag: "Géo ↕", thName: "Nom ↕", thDesc: "Description ↕", thVersion: "Version ↕", thIP: "IP:Port ↕", thUsers: "Utilisateurs ↕", thFiles: "Fichiers ↕"
             },
             es: {
                 title: "🌐 Servidores eD2k Activos", update: "Última actualización:", download: "⬇️ Descargar server.met", copy: "Copie la URL de este archivo en eMule para actualizaciones automáticas.",
-                thFlag: "Geo ↕", thName: "Nombre ↕", thDesc: "Descripción ↕", thIP: "IP:Puerto ↕", thUsers: "Usuarios ↕", thMax: "Máx Usuarios ↕", thFiles: "Archivos ↕"
+                thFlag: "Geo ↕", thName: "Nombre ↕", thDesc: "Descripción ↕", thVersion: "Versión ↕", thIP: "IP:Puerto ↕", thUsers: "Usuarios ↕", thFiles: "Archivos ↕"
             }
         };
 
@@ -369,9 +247,9 @@ def generate_html(servers):
             document.getElementById("th-flag").innerText = t.thFlag;
             document.getElementById("th-name").innerText = t.thName;
             document.getElementById("th-desc").innerText = t.thDesc;
+            document.getElementById("th-version").innerText = t.thVersion;
             document.getElementById("th-ip").innerText = t.thIP;
             document.getElementById("th-users").innerText = t.thUsers;
-            document.getElementById("th-max").innerText = t.thMax;
             document.getElementById("th-files").innerText = t.thFiles;
         }
 
@@ -432,11 +310,11 @@ def main():
                 ip, port_str = line.split(":")
                 port = int(port_str)
                 
-                print(f"Test de {ip}:{port}...")
+                print(f"Interrogation UDP de {ip}:{port}...")
                 stats = get_server_info(ip, port)
                 
                 if stats:
-                    print(f"  -> Actif ✅ | {stats['method']} | {stats['name']} | {stats['users']} users")
+                    print(f"  -> Actif ✅ | {stats['name']} | Version: {stats['version']} | {stats['users']} users")
                     
                     flag, country_code = get_country_info(ip)
                     
