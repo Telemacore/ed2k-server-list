@@ -42,7 +42,6 @@ def enrich_with_geo(servers):
                     code = res.get("countryCode", "XX")
                     s["country_code"] = code
                     if code != "XX":
-                        # Utilisation de l'URL SVG officielle de flagcdn.io
                         s["flag"] = f'<img src="https://flagcdn.io/{code.lower()}.svg" width="24" height="18" alt="{code}" style="vertical-align: middle; border-radius: 2px; box-shadow: 0 0 2px rgba(0,0,0,0.3);">'
                     else:
                         s["flag"] = "❓"
@@ -128,23 +127,35 @@ def get_server_info(ip, tcp_port):
 
 # --- GÉNÉRATION FICHIERS ---
 def write_tag_string_id(tag_id, value):
+    """Encode un tag eD2k de type String (0x02)"""
     val_bytes = value.encode('utf-8', errors='ignore')
     tag = struct.pack("<B H B H", 2, 1, tag_id, len(val_bytes))
     tag += val_bytes
     return tag
 
+def write_tag_uint32_id(tag_id, value):
+    """Encode un tag eD2k de type Entier 32bits (0x03)"""
+    return struct.pack("<B H B I", 3, 1, tag_id, int(value))
+
 def generate_server_met(servers):
     with open(MET_FILE, "wb") as f:
-        f.write(struct.pack("<B", 0xE0))
-        f.write(struct.pack("<I", len(servers)))
+        f.write(struct.pack("<B", 0xE0)) # Header
+        f.write(struct.pack("<I", len(servers))) # Nombre de serveurs
         
         for s in servers:
             f.write(struct.pack("<I", ip_to_int(s['ip'])))
             f.write(struct.pack("<H", s['port']))
             
             tags = []
-            if s['stats']['name']: tags.append(write_tag_string_id(1, s['stats']['name']))
-            if s['stats']['desc']: tags.append(write_tag_string_id(2, s['stats']['desc']))
+            stats = s['stats']
+            
+            # Tags eDonkey standards
+            if stats.get('name'): tags.append(write_tag_string_id(1, stats['name']))
+            if stats.get('desc'): tags.append(write_tag_string_id(2, stats['desc']))
+            if stats.get('version') and stats['version'] != 'Inconnue': 
+                tags.append(write_tag_string_id(7, stats['version']))
+            if stats.get('users'): tags.append(write_tag_uint32_id(8, stats['users'])) # 8 = ST_MAXUSERS / Users
+            if stats.get('files'): tags.append(write_tag_uint32_id(9, stats['files'])) # 9 = ST_SOFTFILES
                 
             f.write(struct.pack("<I", len(tags)))
             for tag in tags:
@@ -159,7 +170,6 @@ def generate_html(servers):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active eD2k Servers</title>
-    <!-- Ajout du logo eMule en Favicon -->
     <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/4/4a/EMule_mascot.svg">
     <style>
         :root {{ --bg: #f4f4f9; --text: #333; --primary: #3498db; --header: #2c3e50; }}
@@ -195,7 +205,6 @@ def generate_html(servers):
                 <span id="page-title">Active eD2k Servers</span>
             </h1>
             <div class="lang-selector">
-                <!-- Utilisation du nouveau format SVG flagcdn.io -->
                 <img src="https://flagcdn.io/gb.svg" width="24" height="18" alt="English" title="English" onclick="changeLang('en')">
                 <img src="https://flagcdn.io/fr.svg" width="24" height="18" alt="Français" title="Français" onclick="changeLang('fr')">
                 <img src="https://flagcdn.io/es.svg" width="24" height="18" alt="Español" title="Español" onclick="changeLang('es')">
@@ -307,7 +316,8 @@ def generate_html(servers):
         }
     </script>
 </body>
-</html>"""
+</html>
+"""
     
     with open(HTML_FILE, "w", encoding="utf-8") as f:
         f.write(html)
