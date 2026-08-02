@@ -1,6 +1,8 @@
-# 🌐 Active eD2k Servers Generator
+# Active eD2k Servers Generator
 
-![eMule](https://upload.wikimedia.org/wikipedia/commons/4/4a/EMule_mascot.svg)
+<p>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/EMule_mascot.svg" alt="eMule" width="70">
+</p>
 
 An automated, maintenance-free eD2k (eMule/eDonkey) server list generator. 
 
