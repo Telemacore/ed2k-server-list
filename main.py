@@ -4,7 +4,6 @@ import os
 import datetime
 import urllib.request
 import json
-import time
 import random
 
 # --- CONFIGURATION ---
@@ -21,29 +20,45 @@ def ip_to_int(ip):
     packed = socket.inet_aton(ip)
     return struct.unpack("<I", packed)[0]
 
-def get_country_info(ip):
-    try:
-        url = f"http://ip-api.com/json/{ip}?fields=countryCode"
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=3) as response:
-            data = json.loads(response.read().decode())
-            code = data.get("countryCode", "XX")
-            if code == "XX": return "❓", "XX"
-            flag = chr(ord(code[0]) + 127397) + chr(ord(code[1]) + 127397)
-            return flag, code
-    except:
-        return "❓", "XX"
+# --- LOGIQUE GeoIP (BATCH OPTIMISÉ) ---
+def enrich_with_geo(servers):
+    """Récupère les pays pour toutes les IP en une seule requête (Batch API)"""
+    if not servers: return
+    
+    # L'API accepte jusqu'à 100 requêtes d'un coup. On découpe par blocs de 100.
+    for i in range(0, len(servers), 100):
+        chunk = servers[i:i+100]
+        queries = [{"query": s["ip"], "fields": "countryCode"} for s in chunk]
+        
+        try:
+            req = urllib.request.Request("http://ip-api.com/batch")
+            req.add_header('Content-Type', 'application/json')
+            req.add_header('User-Agent', 'Mozilla/5.0')
+            jsondata = json.dumps(queries).encode('utf-8')
+            
+            with urllib.request.urlopen(req, data=jsondata, timeout=5) as response:
+                results = json.loads(response.read().decode())
+                
+                for s, res in zip(chunk, results):
+                    code = res.get("countryCode", "XX")
+                    s["country_code"] = code
+                    if code != "XX":
+                        # Utilisation d'images fiables au lieu des emojis (contourne le bug Windows)
+                        s["flag"] = f'<img src="https://flagcdn.com/24x18/{code.lower()}.png" width="24" height="18" alt="{code}" style="vertical-align: middle; border-radius: 2px;">'
+                    else:
+                        s["flag"] = "❓"
+        except Exception as e:
+            print(f"Erreur GeoIP Batch : {e}")
+            for s in chunk:
+                s["country_code"], s["flag"] = "XX", "❓"
 
 # --- LOGIQUE eD2K (UDP Uniquement) ---
 def parse_ed2k_tags(payload, offset, num_tags):
-    """Décode la liste des Tags renvoyée par le serveur."""
     tags = {}
     for _ in range(num_tags):
         if offset >= len(payload): break
-            
         tag_type = payload[offset] & 0x7F
         offset += 1
-        
         if offset + 2 > len(payload): break
         name_len = struct.unpack_from("<H", payload, offset)[0]
         offset += 2
@@ -67,11 +82,9 @@ def parse_ed2k_tags(payload, offset, num_tags):
             
         if name is not None and val is not None:
             tags[name] = val
-            
     return tags
 
 def get_server_info(ip, tcp_port):
-    """Interroge le serveur en UDP (Méthode officielle, instantanée et non-bloquante)"""
     udp_port = tcp_port + 4
     info = {
         'active': False, 'name': 'Inconnu', 'desc': 'Aucune description', 
@@ -81,7 +94,6 @@ def get_server_info(ip, tcp_port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(2.0)
     
-    # 1. REQUÊTE UTILISATEURS / FICHIERS (0x96)
     challenge_stat = random.randint(1, 0xFFFFFFFF)
     try:
         sock.sendto(struct.pack("<BBI", 0xE3, 0x96, challenge_stat), (ip, udp_port))
@@ -92,7 +104,6 @@ def get_server_info(ip, tcp_port):
                 info['users'], info['files'] = users, files
     except Exception: pass
                 
-    # 2. REQUÊTE NOM / DESCRIPTION / VERSION (0xA2)
     challenge_desc = (random.randint(1, 65535) << 16) | 0xF0FF
     try:
         sock.sendto(struct.pack("<BBI", 0xE3, 0xA2, challenge_desc), (ip, udp_port))
@@ -301,6 +312,7 @@ def main():
     
     active_servers = []
     
+    print("--- 1. Analyse des serveurs eD2k (UDP) ---")
     with open(INPUT_FILE, "r") as f:
         for line in f:
             line = line.strip()
@@ -310,35 +322,33 @@ def main():
                 ip, port_str = line.split(":")
                 port = int(port_str)
                 
-                print(f"Interrogation UDP de {ip}:{port}...")
                 stats = get_server_info(ip, port)
-                
                 if stats:
-                    print(f"  -> Actif ✅ | {stats['name']} | Version: {stats['version']} | {stats['users']} users")
-                    
-                    flag, country_code = get_country_info(ip)
-                    
+                    print(f"  ✅ Actif : {ip}:{port} | {stats['name']} | {stats['files']} fichiers")
                     active_servers.append({
                         "ip": ip,
                         "port": port,
-                        "flag": flag,
-                        "country_code": country_code,
                         "stats": stats
                     })
-                    time.sleep(1.5)
                 else:
-                    print("  -> Hors ligne ❌")
+                    print(f"  ❌ Hors ligne : {ip}:{port}")
                     
             except Exception as e:
-                print(f"Erreur avec '{line}': {e}")
+                print(f"Erreur locale avec '{line}': {e}")
                 
-    print(f"\nTerminé. {len(active_servers)} serveurs actifs.")
-    
     if active_servers:
+        print("\n--- 2. Résolution des drapeaux (Batch API) ---")
+        enrich_with_geo(active_servers)
+        
+        print("\n--- 3. Tri et Génération ---")
+        # LE TRI PAR DÉFAUT : On trie la liste Python par le nombre de fichiers décroissant
+        active_servers.sort(key=lambda s: s['stats']['files'], reverse=True)
+        
         generate_server_met(active_servers)
         generate_html(active_servers)
+        print(f"\nTerminé avec succès. {len(active_servers)} serveurs publiés.")
     else:
-        print("Aucun serveur actif, pas de mise à jour des fichiers.")
+        print("\nAucun serveur actif trouvé, génération annulée.")
 
 if __name__ == "__main__":
     main()
