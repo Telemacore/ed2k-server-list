@@ -11,7 +11,7 @@ INPUT_FILE = "servers.txt"
 OUTPUT_DIR = "public"
 MET_FILE = os.path.join(OUTPUT_DIR, "server.met")
 HTML_FILE = os.path.join(OUTPUT_DIR, "index.html")
-TIMEOUT = 3 # Secondes d'attente max pour le ping TCP
+TIMEOUT = 4.0 # Secondes pour la poignée de main TCP eD2k
 
 def ensure_dir(directory):
     if not os.path.exists(directory):
@@ -21,15 +21,7 @@ def ip_to_int(ip):
     packed = socket.inet_aton(ip)
     return struct.unpack("<I", packed)[0]
 
-def check_server_tcp(ip, port):
-    try:
-        with socket.create_connection((ip, port), timeout=TIMEOUT):
-            return True
-    except:
-        return False
-
 def get_country_info(ip):
-    """Récupère le code pays via ip-api.com (respecte la limite de 45 requêtes/min)"""
     try:
         url = f"http://ip-api.com/json/{ip}?fields=countryCode"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -37,34 +29,156 @@ def get_country_info(ip):
             data = json.loads(response.read().decode())
             code = data.get("countryCode", "XX")
             if code == "XX": return "❓", "XX"
-            # Convertit le code pays en emoji drapeau
             flag = chr(ord(code[0]) + 127397) + chr(ord(code[1]) + 127397)
             return flag, code
     except:
         return "❓", "XX"
 
-def get_mock_ed2k_stats(ip):
-    """
-    Simule la récupération des métadonnées eD2k.
-    Pour avoir les vrais chiffres, il faudrait implémenter un client UDP eDonkey (OP_GETSERVERINFO).
-    """
-    return {
-        "name": f"eDonkeyServer ({ip})",
-        "desc": "Standard eD2k Server",
-        "users": 1500,
-        "max_users": 50000,
-        "files": 125000
-    }
+def parse_ed2k_tags(data):
+    """Décode les tags binaires eD2k pour extraire le Nom et la Description"""
+    tags = {}
+    try:
+        if len(data) < 4: return tags
+        count = struct.unpack("<I", data[:4])[0]
+        offset = 4
+        for _ in range(count):
+            if offset >= len(data): break
+            t_type = data[offset]
+            offset += 1
+            
+            if offset + 2 > len(data): break
+            name_len = struct.unpack("<H", data[offset:offset+2])[0]
+            offset += 2
+            
+            if offset + name_len > len(data): break
+            name = data[offset:offset+name_len]
+            offset += name_len
+            
+            val = None
+            if t_type == 2: # Tag de type String
+                if offset + 2 > len(data): break
+                val_len = struct.unpack("<H", data[offset:offset+2])[0]
+                offset += 2
+                if offset + val_len > len(data): break
+                val_bytes = data[offset:offset+val_len]
+                offset += val_len
+                try:
+                    val = val_bytes.decode('utf-8')
+                except:
+                    val = val_bytes.decode('latin1', errors='ignore')
+            elif t_type == 3: # Tag de type Integer (32 bit)
+                if offset + 4 > len(data): break
+                val = struct.unpack("<I", data[offset:offset+4])[0]
+                offset += 4
+            elif t_type == 8: # Tag de type Integer (16 bit)
+                if offset + 2 > len(data): break
+                val = struct.unpack("<H", data[offset:offset+2])[0]
+                offset += 2
+            elif t_type == 9: # Tag de type Integer (8 bit)
+                if offset + 1 > len(data): break
+                val = struct.unpack("<B", data[offset:offset+1])[0]
+                offset += 1
+            else:
+                break # Type inconnu, on stoppe la lecture pour éviter un décalage
+                
+            if val is not None:
+                tags[name] = val
+    except:
+        pass
+    return tags
 
-def write_tag_string(name, value):
-    tag = struct.pack("<B", 2)
-    tag += struct.pack("<H", len(name))
-    tag += name.encode('utf-8')
-    tag += struct.pack("<H", len(value))
-    tag += value.encode('utf-8')
+def probe_ed2k_server(ip, port):
+    """Se connecte au serveur et effectue le handshake eD2k pour obtenir les infos réelles"""
+    stats = {
+        "active": False,
+        "name": f"Server ({ip})",
+        "desc": "Aucune description",
+        "users": 0,
+        "max_users": 0,
+        "files": 0
+    }
+    
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(TIMEOUT)
+        s.connect((ip, port))
+        
+        # 1. Construction du paquet "Login Request" (Simule un client eMule)
+        user_hash = os.urandom(16)
+        client_name = b"GitHub_ServerProbe"
+        # Tag Nom Client
+        t_name = struct.pack("<B H B H", 2, 1, 1, len(client_name)) + client_name
+        # Tag Version (0x3C = eMule 0.60)
+        t_version = struct.pack("<B H B I", 3, 1, 0x11, 0x3C)
+        tags = t_name + t_version
+        
+        payload = struct.pack("<16s I H I", user_hash, 0, 4662, 2) + tags
+        packet = b'\x01' + payload # 0x01 = OP_LOGINREQUEST
+        s.sendall(struct.pack("<B I", 0xE3, len(packet)) + packet)
+        
+        # 2. Écoute des réponses du serveur
+        start_time = time.time()
+        got_status = False
+        got_ident = False
+        
+        while time.time() - start_time < TIMEOUT:
+            if got_status and got_ident:
+                break
+                
+            hdr = s.recv(5)
+            if len(hdr) < 5: break
+            magic, size = struct.unpack("<B I", hdr)
+            
+            # 0xE3 (eDonkey) ou 0xC5 (eMule)
+            if magic not in (0xE3, 0xC5) or size > 65536: 
+                break
+            
+            data = b""
+            while len(data) < size:
+                chunk = s.recv(min(4096, size - len(data)))
+                if not chunk: break
+                data += chunk
+            
+            if not data: break
+            
+            opcode = data[0]
+            payload = data[1:]
+            
+            if opcode == 0x34: # OP_SERVERSTATUS (Stats utilisateurs/fichiers)
+                if len(payload) >= 8:
+                    stats["users"], stats["files"] = struct.unpack("<I I", payload[:8])
+                    got_status = True
+                    if len(payload) >= 12: 
+                        stats["max_users"] = struct.unpack("<I", payload[8:12])[0]
+            
+            elif opcode == 0x41: # OP_SERVERIDENT (Métadonnées du serveur)
+                if len(payload) > 26:
+                    tag_data = payload[22:] # On ignore le Hash(16), l'IP(4) et le Port(2)
+                    tag_dict = parse_ed2k_tags(tag_data)
+                    # L'ID b'\x01' est le Nom, l'ID b'\x02' est la Description
+                    if b'\x01' in tag_dict: stats["name"] = str(tag_dict[b'\x01'])
+                    if b'\x02' in tag_dict: stats["desc"] = str(tag_dict[b'\x02'])
+                    got_ident = True
+                    
+        s.close()
+        
+        if got_status or got_ident:
+            stats["active"] = True
+            
+    except Exception as e:
+        pass
+        
+    return stats
+
+def write_tag_string_id(tag_id, value):
+    """Génère un tag pour le server.met en utilisant l'ID eD2k au lieu d'une chaîne"""
+    val_bytes = value.encode('utf-8', errors='ignore')
+    tag = struct.pack("<B H B H", 2, 1, tag_id, len(val_bytes))
+    tag += val_bytes
     return tag
 
 def generate_server_met(servers):
+    """Compile le binaire avec les vraies métadonnées capturées"""
     with open(MET_FILE, "wb") as f:
         f.write(struct.pack("<B", 0xE0))
         f.write(struct.pack("<I", len(servers)))
@@ -72,9 +186,14 @@ def generate_server_met(servers):
         for s in servers:
             f.write(struct.pack("<I", ip_to_int(s['ip'])))
             f.write(struct.pack("<H", s['port']))
-            tag_data = write_tag_string("server_name", s['stats']['name'])
-            f.write(struct.pack("<I", 1))
-            f.write(tag_data)
+            
+            tags = []
+            if s['stats']['name']: tags.append(write_tag_string_id(1, s['stats']['name']))
+            if s['stats']['desc']: tags.append(write_tag_string_id(2, s['stats']['desc']))
+                
+            f.write(struct.pack("<I", len(tags))) # Nombre de tags pour ce serveur
+            for tag in tags:
+                f.write(tag)
 
 def generate_html(servers):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -88,9 +207,9 @@ def generate_html(servers):
     <style>
         :root {{ --bg: #f4f4f9; --text: #333; --primary: #3498db; --header: #2c3e50; }}
         body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }}
-        .container {{ max-width: 1000px; margin: auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
+        .container {{ max-width: 1200px; margin: auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
         
-        .top-bar {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }}
+        .top-bar {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }}
         h1 {{ color: var(--header); margin: 0; }}
         select#lang {{ padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; cursor: pointer; }}
         
@@ -104,6 +223,7 @@ def generate_html(servers):
         th:hover {{ background: #34495e; }}
         tr:hover {{ background-color: #f9f9f9; }}
         .num {{ font-family: monospace; font-size: 13px; }}
+        .desc-col {{ max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
     </style>
 </head>
 <body>
@@ -142,8 +262,8 @@ def generate_html(servers):
         html += f"""
                     <tr>
                         <td title="{s['country_code']}">{s['flag']}</td>
-                        <td>{s['stats']['name']}</td>
-                        <td>{s['stats']['desc']}</td>
+                        <td style="font-weight: bold;">{s['stats']['name']}</td>
+                        <td class="desc-col" title="{s['stats']['desc']}">{s['stats']['desc']}</td>
                         <td class="num">{s['ip']}:{s['port']}</td>
                         <td class="num">{s['stats']['users']:,}</td>
                         <td class="num">{s['stats']['max_users']:,}</td>
@@ -157,7 +277,6 @@ def generate_html(servers):
     </div>
 
     <script>
-        // --- MULTILINGUAL (i18n) DICTIONARY ---
         const translations = {
             en: {
                 title: "🌐 Active eD2k Servers", update: "Last update:", download: "⬇️ Download server.met", copy: "Copy this file's URL into your eMule settings for automatic updates.",
@@ -188,7 +307,6 @@ def generate_html(servers):
             document.getElementById("th-files").innerText = t.thFiles;
         }
 
-        // --- SORTING LOGIC ---
         function sortTable(n) {
             const table = document.getElementById("server-table");
             let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
@@ -247,20 +365,19 @@ def main():
     with open(INPUT_FILE, "r") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith("#"):
-                continue
+            if not line or line.startswith("#"): continue
             
             try:
                 ip, port_str = line.split(":")
                 port = int(port_str)
                 
-                print(f"Test de {ip}:{port}...")
-                if check_server_tcp(ip, port):
-                    print("  -> Actif ✅")
+                print(f"Interrogation eD2k de {ip}:{port}...")
+                stats = probe_ed2k_server(ip, port)
+                
+                if stats["active"]:
+                    print(f"  -> Actif ✅ | Nom : {stats['name']} | Users : {stats['users']}")
                     
-                    # Récupération GeoIP et métadonnées
                     flag, country_code = get_country_info(ip)
-                    stats = get_mock_ed2k_stats(ip)
                     
                     active_servers.append({
                         "ip": ip,
@@ -269,14 +386,12 @@ def main():
                         "country_code": country_code,
                         "stats": stats
                     })
-                    
-                    time.sleep(1.5) # Pause pour ne pas saturer l'API gratuite ip-api
-                    
+                    time.sleep(1.5)
                 else:
                     print("  -> Hors ligne ❌")
                     
             except Exception as e:
-                print(f"Erreur avec la ligne '{line}': {e}")
+                print(f"Erreur locale avec '{line}': {e}")
                 
     print(f"\nTerminé. {len(active_servers)} serveurs actifs.")
     
