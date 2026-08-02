@@ -15,12 +15,12 @@ def ensure_dir(directory):
         os.makedirs(directory)
 
 def ip_to_int(ip):
-    \"\"\"Convertit une IP string en entier (Little Endian) pour le binaire.\"\"\"
+    """Convertit une IP string en entier (Little Endian) pour le binaire."""
     packed = socket.inet_aton(ip)
     return struct.unpack("<I", packed)[0]
 
 def check_server(ip, port):
-    \"\"\"Tente d'établir une connexion TCP pour vérifier si le serveur est actif.\"\"\"
+    """Tente d'établir une connexion TCP pour vérifier si le serveur est actif."""
     try:
         with socket.create_connection((ip, port), timeout=TIMEOUT):
             return True
@@ -28,7 +28,7 @@ def check_server(ip, port):
         return False
 
 def write_tag_string(name, value):
-    \"\"\"Génère un tag binaire de type string (Type 2) pour le format eD2k.\"\"\"
+    """Génère un tag binaire de type string (Type 2) pour le format eD2k."""
     tag = struct.pack("<B", 2) # Type 2 = String
     tag += struct.pack("<H", len(name))
     tag += name.encode('utf-8')
@@ -37,7 +37,7 @@ def write_tag_string(name, value):
     return tag
 
 def generate_server_met(servers):
-    \"\"\"Génère le fichier binaire strict server.met\"\"\"
+    """Génère le fichier binaire strict server.met"""
     with open(MET_FILE, "wb") as f:
         f.write(struct.pack("<B", 0xE0)) # Header eD2k
         f.write(struct.pack("<I", len(servers))) # Nombre de serveurs
@@ -53,9 +53,9 @@ def generate_server_met(servers):
             f.write(tag_data)
 
 def generate_html(servers):
-    \"\"\"Génère une page d'accueil simple pour présenter les serveurs actifs.\"\"\"
+    """Génère une page d'accueil simple pour présenter les serveurs actifs."""
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    html = f\"\"\"
+    html = f"""
     <!DOCTYPE html>
     <html lang="fr">
     <head>
@@ -87,23 +87,23 @@ def generate_html(servers):
                     <th>Statut</th>
                     <th>Lien eD2k</th>
                 </tr>
-    \"\"\"
+    """
     for s in servers:
-        html += f\"\"\"
+        html += f"""
                 <tr>
                     <td>{s['ip']}</td>
                     <td>{s['port']}</td>
                     <td class="status">En ligne</td>
                     <td><a href="ed2k://|server|{s['ip']}|{s['port']}|/">Ajouter</a></td>
                 </tr>
-        \"\"\"
+        """
     
-    html += \"\"\"
+    html += """
             </table>
         </div>
     </body>
     </html>
-    \"\"\"
+    """
     with open(HTML_FILE, "w", encoding="utf-8") as f:
         f.write(html)
 
@@ -136,7 +136,7 @@ def main():
             except Exception as e:
                 print(f"Erreur avec la ligne '{line}': {e}")
                 
-    print(f"\\nTerminé. {len(active_servers)} serveurs actifs trouvés.")
+    print(f"\nTerminé. {len(active_servers)} serveurs actifs trouvés.")
     
     generate_server_met(active_servers)
     generate_html(active_servers)
