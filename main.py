@@ -124,19 +124,24 @@ def get_server_info(ip, tcp_port):
         
     return info if info['active'] else None
 
-# --- GÉNÉRATION FICHIERS BINAIRES (CORRIGÉE) ---
+# --- GÉNÉRATION FICHIER BINAIRE (CORRIGÉE SELON CODE SOURCE aMule) ---
 def write_tag_string_id(tag_id, value):
-    """Encode un tag eD2k String avec le bit bNameIsID (0x80) obligatoire"""
-    val_bytes = value.encode('utf-8', errors='ignore')
-    # 0x82 = Type String (0x02) | bNameIsID (0x80)
-    tag = struct.pack("<B B H", 0x82, tag_id, len(val_bytes))
+    """Encode un tag String avec un identifiant numérique (ID).
+       Format attendu dans un fichier .met (Type 0x02, NameLength = 1, Name = ID)"""
+    val_bytes = str(value).encode('utf-8', errors='ignore')
+    tag = struct.pack("<B H B H", 2, 1, tag_id, len(val_bytes))
     tag += val_bytes
     return tag
 
-def write_tag_uint32_id(tag_id, value):
-    """Encode un tag eD2k Uint32 avec le bit bNameIsID (0x80) obligatoire"""
-    # 0x83 = Type Uint32 (0x03) | bNameIsID (0x80)
-    return struct.pack("<B B I", 0x83, tag_id, int(value))
+def write_tag_uint32_name(name_str, value):
+    """Encode un tag Uint32 avec un nom textuel (String Name).
+       Obligatoire pour "files" et "users" selon le parseur C++."""
+    name_bytes = name_str.encode('ascii')
+    # Type 0x03, Longueur du nom, Nom en string, Valeur sur 4 octets
+    tag = struct.pack("<B H", 3, len(name_bytes))
+    tag += name_bytes
+    tag += struct.pack("<I", int(value))
+    return tag
 
 def generate_server_met(servers):
     with open(MET_FILE, "wb") as f:
@@ -150,19 +155,19 @@ def generate_server_met(servers):
             tags = []
             stats = s['stats']
             
-            # Application stricte des identifiants (IDs) officiels eMule
+            # Tags standards utilisant des IDs
             if stats.get('name'): 
-                tags.append(write_tag_string_id(1, stats['name'])) # 1 = ST_SERVERNAME
+                tags.append(write_tag_string_id(1, stats['name'])) # ST_SERVERNAME
             if stats.get('desc'): 
-                tags.append(write_tag_string_id(11, stats['desc'])) # 11 = ST_DESCRIPTION
+                tags.append(write_tag_string_id(11, stats['desc'])) # ST_DESCRIPTION
             if stats.get('version') and stats['version'] != 'Inconnue': 
-                tags.append(write_tag_string_id(17, stats['version'])) # 17 = ST_VERSION
+                tags.append(write_tag_string_id(17, stats['version'])) # ST_VERSION
             
-            # Utilisateurs et Fichiers
+            # Tags obligatoirement textuels (cf. bloc default du fichier C++)
             if stats.get('users'): 
-                tags.append(write_tag_uint32_id(8, stats['users'])) # 8 = ST_USERS
+                tags.append(write_tag_uint32_name("users", stats['users']))
             if stats.get('files'): 
-                tags.append(write_tag_uint32_id(9, stats['files'])) # 9 = ST_FILES
+                tags.append(write_tag_uint32_name("files", stats['files']))
                 
             f.write(struct.pack("<I", len(tags)))
             for tag in tags:
