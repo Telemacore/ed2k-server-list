@@ -3,7 +3,7 @@
 Active eD2k Server Directory & Harvester
 =========================================
 An automated Python scanner that probes eDonkey/eMule servers via UDP/TCP,
-extracts extended server statistics (Max Users, Limits, LowID, Ping), updates
+extracts extended server statistics (Max Users, Limits, LowID), updates
 its seed list from remote peers & server.met URLs, and generates a modern web portal.
 
 Author: Telemacore & Antigravity AI
@@ -24,6 +24,13 @@ import urllib.parse
 import concurrent.futures
 from typing import Dict, List, Tuple, Optional, Any, Set
 
+# Reconfigure stdout for UTF-8 compatibility on Windows terminals
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
@@ -33,13 +40,6 @@ MET_FILE = os.path.join(OUTPUT_DIR, "server.met")
 HTML_FILE = os.path.join(OUTPUT_DIR, "index.html")
 JSON_FILE = os.path.join(OUTPUT_DIR, "servers.json")
 TXT_FILE = os.path.join(OUTPUT_DIR, "servers.txt")
-
-# Reconfigure stdout for UTF-8 compatibility on Windows terminals
-if sys.stdout and hasattr(sys.stdout, "reconfigure"):
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
 
 # Community server.met and list URLs to pull new servers from
 REMOTE_MET_URLS = [
@@ -189,7 +189,7 @@ def parse_ed2k_tags(payload: bytes, offset: int, num_tags: int) -> Dict[Any, Any
 # ==============================================================================
 def probe_server_udp(ip: str, tcp_port: int, timeout: float = UDP_TIMEOUT) -> Optional[Dict[str, Any]]:
     """
-    Probes an eD2k server via UDP to gather live metrics (users, files, max users, limits, ping).
+    Probes an eD2k server via UDP to gather live metrics (users, files, max users, limits).
     UDP port is standard TCP_PORT + 4.
     """
     udp_port = tcp_port + 4
@@ -207,26 +207,22 @@ def probe_server_udp(ip: str, tcp_port: int, timeout: float = UDP_TIMEOUT) -> Op
         "lowid_users": None,
         "soft_files": None,
         "hard_files": None,
-        "ping_ms": None,
     }
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(timeout)
 
-    start_time = time.time()
     # 1. OP_GLOBSERVSTATREQ (0x96) using eMule Magic Challenge
     challenge_stat = 0x55AA0000 | random.randint(0, 0xFFFF)
     try:
         sock.sendto(struct.pack("<BBI", 0xE3, 0x96, challenge_stat), (ip, udp_port))
         data, _ = sock.recvfrom(1024)
-        rtt = int((time.time() - start_time) * 1000)
-        
+
         if len(data) >= 14 and data[0] == 0xE3 and data[1] == 0x97:
             resp_challenge, users, files = struct.unpack_from("<III", data, 2)
             if resp_challenge == challenge_stat:
                 info["users"] = users
                 info["files"] = files
-                info["ping_ms"] = rtt
                 info["active"] = True
 
                 # Parse optional hidden stat fields appended at end of packet
@@ -542,8 +538,7 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
     # Calculate summary metrics
     total_users = sum(s.get("users", 0) for s in servers)
     total_files = sum(s.get("files", 0) for s in servers)
-    valid_pings = [s["ping_ms"] for s in servers if s.get("ping_ms") is not None]
-    avg_ping = int(sum(valid_pings) / len(valid_pings)) if valid_pings else 0
+    total_max_capacity = sum(s.get("max_users", 0) for s in servers if s.get("max_users"))
 
     servers_json_escaped = json.dumps(servers, ensure_ascii=False).replace("</script>", "<\\/script>")
 
@@ -552,8 +547,8 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Active eD2k Server List • eMule Server Directory</title>
-    <meta name="description" content="Verified active eD2k (eMule / aMule) server list with real-time stats, ping metrics, limits, and automated server.met updates.">
+    <title>Active eD2k Server List • eMule & eDonkey Directory</title>
+    <meta name="description" content="Verified active eD2k (eMule / aMule) server list with real-time user statistics, file index limits, and automated server.met updates.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -652,6 +647,77 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-wrap: wrap;
+        }}
+
+        /* --- CUSTOM LANGUAGE SELECTOR WITH FLAGS --- */
+        .lang-picker {{
+            position: relative;
+            display: inline-block;
+        }}
+        .lang-btn-current {{
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-card);
+            color: var(--text-main);
+            padding: 7px 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }}
+        .lang-btn-current:hover {{
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--primary);
+        }}
+        .lang-btn-current img {{
+            width: 20px;
+            height: 14px;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }}
+
+        .lang-dropdown {{
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-md);
+            box-shadow: var(--glass-shadow);
+            display: none;
+            flex-direction: column;
+            min-width: 140px;
+            z-index: 100;
+            overflow: hidden;
+        }}
+        .lang-dropdown.show {{
+            display: flex;
+        }}
+        .lang-option {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }}
+        .lang-option:hover {{
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+        }}
+        .lang-option img {{
+            width: 20px;
+            height: 14px;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }}
 
         .btn-icon {{
@@ -891,7 +957,7 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
             color: var(--text-muted);
             font-weight: 400;
             margin-top: 3px;
-            max-width: 280px;
+            max-width: 300px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -899,17 +965,27 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
 
         .badge {{
             display: inline-block;
-            padding: 3px 8px;
+            padding: 4px 8px;
             border-radius: var(--radius-sm);
             font-size: 11px;
             font-weight: 600;
             font-family: 'JetBrains Mono', monospace;
         }}
-        .badge-ping-good {{ background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }}
-        .badge-ping-medium {{ background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }}
-        .badge-ping-high {{ background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }}
 
         .badge-version {{ background: rgba(99, 102, 241, 0.15); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.3); }}
+        
+        .badge-limit {{
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--border-card);
+            font-size: 11px;
+        }}
+        .badge-limit-none {{
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            font-size: 11px;
+        }}
 
         .num-font {{
             font-family: 'JetBrains Mono', monospace;
@@ -934,6 +1010,60 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
             height: 100%;
             background: linear-gradient(90deg, var(--success), var(--warning));
             border-radius: 3px;
+        }}
+
+        /* --- ACTION BUTTON GROUP --- */
+        .action-cell {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }}
+        .btn-action-add {{
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }}
+        .btn-action-add:hover {{
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%);
+            color: #ffffff;
+            border-color: transparent;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(99, 102, 241, 0.4);
+        }}
+        .btn-action-copy {{
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-card);
+            color: var(--text-muted);
+            padding: 6px 8px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+        }}
+        .btn-action-copy:hover {{
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
+            border-color: var(--primary);
+        }}
+
+        /* --- HELP TOOLTIP --- */
+        .info-tooltip {{
+            position: relative;
+            display: inline-block;
+            margin-left: 4px;
+            cursor: help;
+            color: var(--accent-cyan);
         }}
 
         /* --- TOAST NOTIFICATIONS --- */
@@ -1006,17 +1136,36 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
                 <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/EMule_mascot.svg" alt="eMule Logo">
                 <div class="brand-text">
                     <h1 id="txt-title">eD2k Active Server Directory</h1>
-                    <p id="txt-subtitle">Live Automated Scanner • High-ID Verified Servers</p>
+                    <p id="txt-subtitle">Automated Real-Time Scanner • eMule & eDonkey Verified</p>
                 </div>
             </div>
             <div class="nav-controls">
-                <select id="lang-select" class="btn-icon" onchange="changeLanguage(this.value)">
-                    <option value="en">🇬🇧 English</option>
-                    <option value="fr">🇫🇷 Français</option>
-                    <option value="es">🇪🇸 Español</option>
-                    <option value="de">🇩🇪 Deutsch</option>
-                    <option value="it">🇮🇹 Italiano</option>
-                </select>
+                <!-- CUSTOM LANGUAGE PICKER WITH FLAGS -->
+                <div class="lang-picker">
+                    <button class="lang-btn-current" onclick="toggleLangDropdown(event)">
+                        <img id="current-flag" src="https://flagcdn.io/gb.svg" alt="EN">
+                        <span id="current-lang-text">English</span>
+                        <span style="font-size:10px">▼</span>
+                    </button>
+                    <div class="lang-dropdown" id="lang-dropdown">
+                        <div class="lang-option" onclick="selectLang('en', 'English', 'gb')">
+                            <img src="https://flagcdn.io/gb.svg" alt="EN"> English
+                        </div>
+                        <div class="lang-option" onclick="selectLang('fr', 'Français', 'fr')">
+                            <img src="https://flagcdn.io/fr.svg" alt="FR"> Français
+                        </div>
+                        <div class="lang-option" onclick="selectLang('es', 'Español', 'es')">
+                            <img src="https://flagcdn.io/es.svg" alt="ES"> Español
+                        </div>
+                        <div class="lang-option" onclick="selectLang('de', 'Deutsch', 'de')">
+                            <img src="https://flagcdn.io/de.svg" alt="DE"> Deutsch
+                        </div>
+                        <div class="lang-option" onclick="selectLang('it', 'Italiano', 'it')">
+                            <img src="https://flagcdn.io/it.svg" alt="IT"> Italiano
+                        </div>
+                    </div>
+                </div>
+
                 <button class="btn-icon" onclick="toggleTheme()">
                     <span id="theme-icon">🌙</span> <span id="theme-txt">Dark</span>
                 </button>
@@ -1031,19 +1180,19 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
                 <div class="stat-sub">🟢 100% Operational</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label" id="lbl-users">Online Users</div>
+                <div class="stat-label" id="lbl-users">Connected Users</div>
                 <div class="stat-value">{format_number(total_users)}</div>
-                <div class="stat-sub">⚡ Connected Network</div>
+                <div class="stat-sub">⚡ Network Users</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label" id="lbl-files">Shared Files</div>
+                <div class="stat-label" id="lbl-files">Indexed Files</div>
                 <div class="stat-value">{format_number(total_files)}</div>
-                <div class="stat-sub">📂 Indexed Files</div>
+                <div class="stat-sub">📂 Searchable Index</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label" id="lbl-ping">Avg Latency</div>
-                <div class="stat-value">{avg_ping} ms</div>
-                <div class="stat-sub">🚀 Fast Response</div>
+                <div class="stat-label" id="lbl-capacity">Total User Capacity</div>
+                <div class="stat-value">{format_number(total_max_capacity)}</div>
+                <div class="stat-sub">🌐 Network Max Slots</div>
             </div>
         </div>
 
@@ -1083,12 +1232,14 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
                             <th onclick="sortTable(0)" id="th-geo">Geo ↕</th>
                             <th onclick="sortTable(1)" id="th-name">Server Name & Description ↕</th>
                             <th onclick="sortTable(2)" id="th-ip">IP:Port ↕</th>
-                            <th onclick="sortTable(3)" id="th-ping">Ping ↕</th>
-                            <th onclick="sortTable(4)" style="text-align:right" id="th-users">Users / Capacity ↕</th>
-                            <th onclick="sortTable(5)" style="text-align:right" id="th-files">Files ↕</th>
-                            <th onclick="sortTable(6)" id="th-limits">Limits ↕</th>
-                            <th onclick="sortTable(7)" id="th-ver">Version ↕</th>
-                            <th style="text-align:center" id="th-action">Connect</th>
+                            <th onclick="sortTable(3)" style="text-align:right" id="th-users">Users / Capacity ↕</th>
+                            <th onclick="sortTable(4)" style="text-align:right" id="th-files">Indexed Files ↕</th>
+                            <th onclick="sortTable(5)" id="th-limits">
+                                <span id="lbl-th-limits">File Limits / User</span>
+                                <span class="info-tooltip" title="Soft limit: Recommended max files per user. Hard limit: Absolute max allowed before rejection.">ℹ️</span> ↕
+                            </th>
+                            <th onclick="sortTable(6)" id="th-ver">Version ↕</th>
+                            <th style="text-align:center" id="th-action">Add Server</th>
                         </tr>
                     </thead>
                     <tbody id="table-body">
@@ -1100,12 +1251,12 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
 
         <!-- INSTRUCTIONS CARD -->
         <div class="instructions-card">
-            <h3 id="txt-inst-title">💡 How to use this list in eMule / aMule</h3>
+            <h3 id="txt-inst-title">💡 How to use this server list in eMule / aMule</h3>
             <ol>
                 <li id="txt-inst-1">Copy the direct <strong>server.met URL</strong>: <span class="code-snippet" id="met-url-display"></span></li>
-                <li id="txt-inst-2">Open your <strong>eMule</strong> preferences → <strong>Server</strong> section.</li>
-                <li id="txt-inst-3">Paste the URL under <em>"Auto-update server list at startup"</em> or click <em>"Update server.met from URL"</em>.</li>
-                <li id="txt-inst-4">Alternatively, click any <strong>"Add to eMule"</strong> link above to add an individual server immediately.</li>
+                <li id="txt-inst-2">Open your <strong>eMule</strong> preferences → <strong>Server</strong> tab.</li>
+                <li id="txt-inst-3">Paste the URL into <em>"Update server.met from URL"</em> or set it to auto-update on startup.</li>
+                <li id="txt-inst-4">Alternatively, click <strong>"Add Server"</strong> on any row above to connect immediately.</li>
             </ol>
         </div>
     </div>
@@ -1118,64 +1269,70 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
 
         const TRANSLATIONS = {{
             en: {{
-                title: "eD2k Active Server Directory", subtitle: "Live Automated Scanner • High-ID Verified Servers",
-                servers: "Active Servers", users: "Online Users", files: "Shared Files", ping: "Avg Latency",
+                title: "eD2k Active Server Directory", subtitle: "Automated Real-Time Scanner • eMule & eDonkey Verified",
+                servers: "Active Servers", users: "Connected Users", files: "Indexed Files", capacity: "Total User Capacity",
                 heroTitle: "Auto-Updating eMule server.met", updated: "Last scan:",
                 btnDownload: "Download server.met", btnCopyUrl: "Copy server.met URL", btnCopyEd2k: "Copy All eD2k Links",
-                thGeo: "Geo ↕", thName: "Server Name & Description ↕", thIp: "IP:Port ↕", thPing: "Ping ↕",
-                thUsers: "Users / Capacity ↕", thFiles: "Files ↕", thLimits: "Limits ↕", thVer: "Version ↕", thAction: "Connect",
-                instTitle: "💡 How to use this list in eMule / aMule",
-                inst1: "Copy the direct server.met URL:", inst2: "Open your eMule preferences → Server section.",
-                inst3: "Paste the URL into 'Update server.met from URL'.", inst4: "Click any 'Add to eMule' link above to add servers instantly."
+                thGeo: "Geo ↕", thName: "Server Name & Description ↕", thIp: "IP:Port ↕",
+                thUsers: "Users / Capacity ↕", thFiles: "Indexed Files ↕", thLimits: "File Limits / User", thVer: "Version ↕", thAction: "Add Server",
+                instTitle: "💡 How to use this server list in eMule / aMule",
+                inst1: "Copy the direct server.met URL:", inst2: "Open your eMule preferences → Server tab.",
+                inst3: "Paste the URL into 'Update server.met from URL'.", inst4: "Click 'Add Server' on any row above to connect immediately.",
+                btnAdd: "Add to eMule", toastCopiedLink: "📋 Server eD2k link copied!", toastCopiedMet: "📋 server.met URL copied!", toastCopiedAll: "🔗 Copied all eD2k server links!"
             }},
             fr: {{
-                title: "Annuaire des Serveurs eD2k Actifs", subtitle: "Scanner Automatique En Direct • Serveurs High-ID Vérifiés",
-                servers: "Serveurs Actifs", users: "Utilisateurs En Ligne", files: "Fichiers Partagés", ping: "Latence Moyenne",
+                title: "Annuaire des Serveurs eD2k Actifs", subtitle: "Scanner Automatique En Direct • Vérifié pour eMule & eDonkey",
+                servers: "Serveurs Actifs", users: "Utilisateurs Connectés", files: "Fichiers Indexés", capacity: "Capacité Totale du Réseau",
                 heroTitle: "Fichier server.met eMule Auto-Mise à Jour", updated: "Dernier scan :",
                 btnDownload: "Télécharger server.met", btnCopyUrl: "Copier l'URL server.met", btnCopyEd2k: "Copier Tous les Liens eD2k",
-                thGeo: "Géo ↕", thName: "Nom du Serveur & Description ↕", thIp: "IP:Port ↕", thPing: "Ping ↕",
-                thUsers: "Utilisateurs / Capacité ↕", thFiles: "Fichiers ↕", thLimits: "Limites ↕", thVer: "Version ↕", thAction: "Connexion",
+                thGeo: "Géo ↕", thName: "Nom du Serveur & Description ↕", thIp: "IP:Port ↕",
+                thUsers: "Utilisateurs / Capacité ↕", thFiles: "Fichiers Indexés ↕", thLimits: "Limites Fichiers / Client", thVer: "Version ↕", thAction: "Ajouter au Serveur",
                 instTitle: "💡 Comment utiliser cette liste dans eMule / aMule",
-                inst1: "Copiez l'URL directe du fichier server.met :", inst2: "Ouvrez les préférences eMule → Section Serveur.",
-                inst3: "Collez l'URL dans 'Mettre à jour server.met depuis l'URL'.", inst4: "Cliquez sur 'Ajouter à eMule' pour ajouter un serveur directement."
+                inst1: "Copiez l'URL directe du fichier server.met :", inst2: "Ouvrez les préférences d'eMule → Onglet Serveur.",
+                inst3: "Collez l'URL dans 'Mettre à jour server.met depuis l'URL'.", inst4: "Cliquez sur 'Ajouter' pour vous connecter directement.",
+                btnAdd: "Ajouter à eMule", toastCopiedLink: "📋 Lien eD2k copié !", toastCopiedMet: "📋 URL server.met copiée !", toastCopiedAll: "🔗 Tous les liens eD2k copiés !"
             }},
             es: {{
-                title: "Directorio de Servidores eD2k Activos", subtitle: "Escáner Automático En Vivo • Servidores Verificados",
-                servers: "Servidores Activos", users: "Usuarios En Línea", files: "Archivos Compartidos", ping: "Latencia Media",
-                heroTitle: "Archivo server.met con Actualización Automática", updated: "Última exploración:",
+                title: "Directorio de Servidores eD2k Activos", subtitle: "Escáner Automático En Tiempo Real • Verificado para eMule",
+                servers: "Servidores Activos", users: "Usuarios Conectados", files: "Archivos Indizados", capacity: "Capacidad Total de Usuarios",
+                heroTitle: "Archivo server.met de Actualización Automática", updated: "Última exploración:",
                 btnDownload: "Descargar server.met", btnCopyUrl: "Copiar URL server.met", btnCopyEd2k: "Copiar Todos los Enlaces eD2k",
-                thGeo: "Geo ↕", thName: "Nombre y Descripción ↕", thIp: "IP:Puerto ↕", thPing: "Ping ↕",
-                thUsers: "Usuarios / Capacidad ↕", thFiles: "Archivos ↕", thLimits: "Límites ↕", thVer: "Versión ↕", thAction: "Conectar",
+                thGeo: "Geo ↕", thName: "Nombre del Servidor y Descripción ↕", thIp: "IP:Puerto ↕",
+                thUsers: "Usuarios / Capacidad ↕", thFiles: "Archivos Indizados ↕", thLimits: "Límite de Archivos / Usuario", thVer: "Versión ↕", thAction: "Añadir Servidor",
                 instTitle: "💡 Cómo usar esta lista en eMule / aMule",
-                inst1: "Copie la URL directa de server.met:", inst2: "Abra las preferencias de eMule → Sección Servidor.",
-                inst3: "Pegue la URL en 'Actualizar server.met desde URL'.", inst4: "Haga clic en 'Añadir a eMule' para agregar un servidor."
+                inst1: "Copie la URL directa de server.met:", inst2: "Abra las preferencias de eMule → Pestaña Servidor.",
+                inst3: "Pegue la URL en 'Actualizar server.met desde URL'.", inst4: "Haga clic en 'Añadir a eMule' para conectar al instante.",
+                btnAdd: "Añadir a eMule", toastCopiedLink: "📋 ¡Enlace eD2k copiado!", toastCopiedMet: "📋 ¡URL server.met copiada!", toastCopiedAll: "🔗 ¡Todos los enlaces eD2k copiados!"
             }},
             de: {{
-                title: "Aktive eD2k Serverliste", subtitle: "Live Automatische Überprüfung • Verifizierte High-ID Server",
-                servers: "Aktive Server", users: "Online Benutzer", files: "Freigegebene Dateien", ping: "Avg Latenz",
+                title: "Aktive eD2k Serverliste", subtitle: "Automatische Echtzeit-Überprüfung für eMule & aMule",
+                servers: "Aktive Server", users: "Verbundene Benutzer", files: "Indizierte Dateien", capacity: "Gesamte Netzwerkkapazität",
                 heroTitle: "Auto-Update eMule server.met Datei", updated: "Letzter Scan:",
                 btnDownload: "server.met Herunterladen", btnCopyUrl: "server.met URL Kopieren", btnCopyEd2k: "Alle eD2k-Links Kopieren",
-                thGeo: "Geo ↕", thName: "Servername & Beschreibung ↕", thIp: "IP:Port ↕", thPing: "Ping ↕",
-                thUsers: "Benutzer / Kapazität ↕", thFiles: "Dateien ↕", thLimits: "Limits ↕", thVer: "Version ↕", thAction: "Verbinden",
+                thGeo: "Geo ↕", thName: "Servername & Beschreibung ↕", thIp: "IP:Port ↕",
+                thUsers: "Benutzer / Kapazität ↕", thFiles: "Indizierte Dateien ↕", thLimits: "Dateilimits / Benutzer", thVer: "Version ↕", thAction: "Hinzufügen",
                 instTitle: "💡 Verwendung dieser Liste in eMule / aMule",
-                inst1: "Kopieren Sie die direkte server.met URL:", inst2: "Öffnen Sie eMule Einstellungen → Server.",
-                inst3: "Fügen Sie die URL bei 'server.met von URL aktualisieren' ein.", inst4: "Klicken Sie auf 'Zu eMule hinzufügen' für direkten Import."
+                inst1: "Kopieren Sie die direkte server.met URL:", inst2: "Öffnen Sie eMule Einstellungen → Option Server.",
+                inst3: "Fügen Sie die URL bei 'server.met von URL aktualisieren' ein.", inst4: "Klicken Sie auf 'Zu eMule hinzufügen' für eine direkte Verbindung.",
+                btnAdd: "Zu eMule hinzufügen", toastCopiedLink: "📋 eD2k-Link kopiert!", toastCopiedMet: "📋 server.met URL kopiert!", toastCopiedAll: "🔗 Alle eD2k-Links kopiert!"
             }},
             it: {{
-                title: "Elenco Server eD2k Attivi", subtitle: "Scansione Automatica Live • Server Verificati High-ID",
-                servers: "Server Attivi", users: "Utenti Online", files: "File Condivisi", ping: "Latenza Media",
+                title: "Elenco Server eD2k Attivi", subtitle: "Scansione Automatica In Tempo Reale per eMule & eDonkey",
+                servers: "Server Attivi", users: "Utenti Connessi", files: "File Indicizzati", capacity: "Capacità Rete Totale",
                 heroTitle: "File server.met Auto-Aggiornante per eMule", updated: "Ultima scansione:",
                 btnDownload: "Scarica server.met", btnCopyUrl: "Copia URL server.met", btnCopyEd2k: "Copia Tutti i Link eD2k",
-                thGeo: "Geo ↕", thName: "Nome Server e Descrizione ↕", thIp: "IP:Porta ↕", thPing: "Ping ↕",
-                thUsers: "Utenti / Capacità ↕", thFiles: "File ↕", thLimits: "Limiti ↕", thVer: "Versione ↕", thAction: "Connetti",
+                thGeo: "Geo ↕", thName: "Nome Server e Descrizione ↕", thIp: "IP:Porta ↕",
+                thUsers: "Utenti / Capacità ↕", thFiles: "File Indicizzati ↕", thLimits: "Limiti File per Utente", thVer: "Versione ↕", thAction: "Aggiungi Server",
                 instTitle: "💡 Come usare questo elenco in eMule / aMule",
-                inst1: "Copia l'URL diretto di server.met:", inst2: "Apri Preferenze eMule → Sezione Server.",
-                inst3: "Incolla l'URL in 'Aggiorna server.met da URL'.", inst4: "Clicca 'Aggiungi a eMule' per aggiungere direttamente un server."
+                inst1: "Copia l'URL diretto di server.met:", inst2: "Apri le preferenze di eMule → Scheda Server.",
+                inst3: "Incolla l'URL in 'Aggiorna server.met da URL'.", inst4: "Clicca su 'Aggiungi a eMule' per connetterti subito.",
+                btnAdd: "Aggiungi a eMule", toastCopiedLink: "📋 Link eD2k copiato!", toastCopiedMet: "📋 URL server.met copiato!", toastCopiedAll: "🔗 Tutti i link eD2k copiati!"
             }}
         }};
 
+        let currentLang = 'en';
         let currentServers = [...SERVERS_DATA];
-        let currentSortCol = 4; // Default sort by Users descending
+        let currentSortCol = 3; // Default sort by Users descending
         let sortAsc = false;
 
         function initPage() {{
@@ -1183,31 +1340,48 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
             const metUrl = origin.substring(0, origin.lastIndexOf('/') + 1) + 'server.met';
             document.getElementById('met-url-display').innerText = metUrl;
             renderTable();
+
+            // Close language dropdown on outside click
+            document.addEventListener('click', function(e) {{
+                const dropdown = document.getElementById('lang-dropdown');
+                if (!e.target.closest('.lang-picker')) {{
+                    dropdown.classList.remove('show');
+                }}
+            }});
+        }}
+
+        function toggleLangDropdown(e) {{
+            e.stopPropagation();
+            document.getElementById('lang-dropdown').classList.toggle('show');
+        }}
+
+        function selectLang(code, name, flag) {{
+            currentLang = code;
+            document.getElementById('current-lang-text').innerText = name;
+            document.getElementById('current-flag').src = `https://flagcdn.io/${{flag}}.svg`;
+            document.getElementById('lang-dropdown').classList.remove('show');
+            applyLanguage(code);
         }}
 
         function formatNum(n) {{
             return n !== null && n !== undefined ? n.toLocaleString() : 'N/A';
         }}
 
-        function getPingBadge(ping) {{
-            if (!ping) return '<span class="badge badge-ping-medium">N/A</span>';
-            if (ping < 60) return `<span class="badge badge-ping-good">${{ping}} ms</span>`;
-            if (ping < 140) return `<span class="badge badge-ping-medium">${{ping}} ms</span>`;
-            return `<span class="badge badge-ping-high">${{ping}} ms</span>`;
-        }}
-
         function renderTable() {{
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
+            const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
             currentServers.forEach(s => {{
                 const ed2kLink = `ed2k://|server|${{s.ip}}|${{s.port}}|/`;
                 const maxUsers = s.max_users ? formatNum(s.max_users) : '∞';
                 const capacityPct = s.max_users && s.max_users > 0 ? Math.min(100, Math.round((s.users / s.max_users) * 100)) : 0;
                 
-                let limitsText = 'Standard';
+                let limitsHtml = '<span class="badge badge-limit-none">No Limit</span>';
                 if (s.soft_files || s.hard_files) {{
-                    limitsText = `Soft: ${{s.soft_files ? formatNum(s.soft_files) : '∞'}} / Hard: ${{s.hard_files ? formatNum(s.hard_files) : '∞'}}`;
+                    const softText = s.soft_files ? formatNum(s.soft_files) : '∞';
+                    const hardText = s.hard_files ? formatNum(s.hard_files) : '∞';
+                    limitsHtml = `<span class="badge badge-limit" title="Soft limit: ${{softText}} files per user | Hard limit: ${{hardText}} files">Soft: ${{softText}} / Hard: ${{hardText}}</span>`;
                 }}
 
                 const tr = document.createElement('tr');
@@ -1220,18 +1394,22 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
                         </div>
                     </td>
                     <td class="num-font">${{s.ip}}:${{s.port}}</td>
-                    <td>${{getPingBadge(s.ping_ms)}}</td>
                     <td style="text-align:right">
                         <div class="num-font" style="font-weight:700">${{formatNum(s.users)}} <span style="font-size:11px;color:var(--text-muted)">/ ${{maxUsers}}</span></div>
                         ${{s.max_users ? `<div class="capacity-bar"><div class="capacity-fill" style="width:${{capacityPct}}%"></div></div>` : ''}}
                     </td>
                     <td class="num-font" style="text-align:right;font-weight:600">${{formatNum(s.files)}}</td>
-                    <td><span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-muted);font-size:10.5px">${{limitsText}}</span></td>
+                    <td>${{limitsHtml}}</td>
                     <td><span class="badge badge-version">${{escapeHtml(s.version)}}</span></td>
                     <td style="text-align:center">
-                        <a href="${{ed2kLink}}" class="btn-icon" style="padding:4px 8px;font-size:11px;display:inline-flex" title="Add directly to eMule client">
-                            ⚡ Connect
-                        </a>
+                        <div class="action-cell">
+                            <a href="${{ed2kLink}}" class="btn-action-add" title="Directly add to eMule protocol handler">
+                                ➕ ${{t.btnAdd}}
+                            </a>
+                            <button class="btn-action-copy" onclick="copySingleEd2k('${{ed2kLink}}')" title="Copy ed2k link to clipboard">
+                                📋
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1266,11 +1444,10 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
                     case 0: valA = a.country_name || ''; valB = b.country_name || ''; break;
                     case 1: valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); break;
                     case 2: valA = a.ip; valB = b.ip; break;
-                    case 3: valA = a.ping_ms || 9999; valB = b.ping_ms || 9999; break;
-                    case 4: valA = a.users || 0; valB = b.users || 0; break;
-                    case 5: valA = a.files || 0; valB = b.files || 0; break;
-                    case 6: valA = a.hard_files || 0; valB = b.hard_files || 0; break;
-                    case 7: valA = a.version || ''; valB = b.version || ''; break;
+                    case 3: valA = a.users || 0; valB = b.users || 0; break;
+                    case 4: valA = a.files || 0; valB = b.files || 0; break;
+                    case 5: valA = a.hard_files || a.soft_files || 9999999; valB = b.hard_files || b.soft_files || 9999999; break;
+                    case 6: valA = a.version || ''; valB = b.version || ''; break;
                     default: valA = a.users || 0; valB = b.users || 0;
                 }}
                 if (valA < valB) return sortAsc ? -1 : 1;
@@ -1281,14 +1458,14 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
             renderTable();
         }}
 
-        function changeLanguage(lang) {{
+        function applyLanguage(lang) {{
             const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
             document.getElementById('txt-title').innerText = t.title;
             document.getElementById('txt-subtitle').innerText = t.subtitle;
             document.getElementById('lbl-servers').innerText = t.servers;
             document.getElementById('lbl-users').innerText = t.users;
             document.getElementById('lbl-files').innerText = t.files;
-            document.getElementById('lbl-ping').innerText = t.ping;
+            document.getElementById('lbl-capacity').innerText = t.capacity;
             document.getElementById('txt-hero-title').innerText = t.heroTitle;
             document.getElementById('txt-updated').innerText = t.updated;
             document.getElementById('txt-btn-download').innerText = t.btnDownload;
@@ -1297,10 +1474,9 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
             document.getElementById('th-geo').innerText = t.thGeo;
             document.getElementById('th-name').innerText = t.thName;
             document.getElementById('th-ip').innerText = t.thIp;
-            document.getElementById('th-ping').innerText = t.thPing;
             document.getElementById('th-users').innerText = t.thUsers;
             document.getElementById('th-files').innerText = t.thFiles;
-            document.getElementById('th-limits').innerText = t.thLimits;
+            document.getElementById('lbl-th-limits').innerText = t.thLimits;
             document.getElementById('th-ver').innerText = t.thVer;
             document.getElementById('th-action').innerText = t.thAction;
             document.getElementById('txt-inst-title').innerText = t.instTitle;
@@ -1308,6 +1484,7 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
             document.getElementById('txt-inst-2').innerText = t.inst2;
             document.getElementById('txt-inst-3').innerText = t.inst3;
             document.getElementById('txt-inst-4').innerText = t.inst4;
+            renderTable();
         }}
 
         function toggleTheme() {{
@@ -1326,14 +1503,21 @@ def generate_html(filepath: str, servers: List[Dict[str, Any]], stats: Dict[str,
             setTimeout(() => toast.classList.remove('show'), 2500);
         }}
 
+        function copySingleEd2k(link) {{
+            const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+            navigator.clipboard.writeText(link).then(() => showToast(t.toastCopiedLink));
+        }}
+
         function copyMetURL() {{
+            const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
             const metUrl = document.getElementById('met-url-display').innerText;
-            navigator.clipboard.writeText(metUrl).then(() => showToast('📋 server.met URL copied!'));
+            navigator.clipboard.writeText(metUrl).then(() => showToast(t.toastCopiedMet));
         }}
 
         function copyAllEd2k() {{
+            const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
             const links = SERVERS_DATA.map(s => `ed2k://|server|${{s.ip}}|${{s.port}}|/`).join('\\n');
-            navigator.clipboard.writeText(links).then(() => showToast(`🔗 Copied ${{SERVERS_DATA.length}} eD2k server links!`));
+            navigator.clipboard.writeText(links).then(() => showToast(t.toastCopiedAll));
         }}
 
         function escapeHtml(str) {{
@@ -1417,7 +1601,7 @@ def main() -> None:
             try:
                 res = future.result()
                 if res and res["active"]:
-                    print(f"  [ONLINE] {ip}:{port} | {res['name']} | {res['users']:,} users | {res['files']:,} files | {res['ping_ms']} ms")
+                    print(f"  [ONLINE] {ip}:{port} | {res['name']} | {res['users']:,} users | {res['files']:,} files")
                     active_servers.append(res)
                 else:
                     print(f"  [OFFLINE] {ip}:{port}")

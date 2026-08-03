@@ -1,11 +1,10 @@
-name: Actualiser server.met
+name: Update server.met
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # S'exécute toutes les 6 heures
-  workflow_dispatch:       # Permet de lancer manuellement depuis l'interface web
+    - cron: '0 */6 * * *'  # Runs every 6 hours
+  workflow_dispatch:       # Allows manual trigger from GitHub UI
 
-# Autorisations nécessaires pour publier sur GitHub Pages
 permissions:
   contents: read
   pages: write
@@ -15,21 +14,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Cloner le dépôt
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configurer Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Exécuter le script de génération
+      - name: Run server list generator
         run: python main.py
 
-      - name: Préparer l'artefact pour Pages
+      - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './public' # Le dossier contenant index.html et server.met
+          path: './public' # Output folder containing index.html, server.met, etc.
 
   deploy:
     needs: build
@@ -38,6 +37,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Déployer sur GitHub Pages
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
