@@ -192,10 +192,6 @@ def parse_ed2k_tags(payload: bytes, offset: int, num_tags: int) -> Dict[Any, Any
 # UDP SERVER HARVESTER & STATS PROBER
 # ==============================================================================
 def probe_server_udp(ip: str, tcp_port: int, timeout: float = UDP_TIMEOUT) -> Optional[Dict[str, Any]]:
-    """
-    Probes an eD2k server via UDP to gather live metrics (users, files, max users, limits).
-    UDP port is standard TCP_PORT + 4.
-    """
     udp_port = tcp_port + 4
     info = {
         "ip": ip,
@@ -216,7 +212,6 @@ def probe_server_udp(ip: str, tcp_port: int, timeout: float = UDP_TIMEOUT) -> Op
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(timeout)
 
-    # 1. OP_GLOBSERVSTATREQ (0x96) using eMule Magic Challenge
     challenge_stat = 0x55AA0000 | random.randint(0, 0xFFFF)
     try:
         sock.sendto(struct.pack("<BBI", 0xE3, 0x96, challenge_stat), (ip, udp_port))
@@ -246,7 +241,6 @@ def probe_server_udp(ip: str, tcp_port: int, timeout: float = UDP_TIMEOUT) -> Op
     except Exception:
         pass
 
-    # 2. OP_SERVER_DESC_REQ (0xA2) to get Name, Description & Version
     challenge_desc = (random.randint(0, 65535) << 16) | 0xF0FF
     try:
         sock.sendto(struct.pack("<BBI", 0xE3, 0xA2, challenge_desc), (ip, udp_port))
@@ -474,11 +468,6 @@ def enrich_with_geo(servers: List[Dict[str, Any]]) -> None:
 # HISTORICAL TRACKING & ANALYTICS MANAGER
 # ==============================================================================
 class HistoryManager:
-    """
-    Manages persistent time-series metrics, server status, and audit logs.
-    STRICT RULE: ONLY servers that have responded as ACTIVE (online) at least once
-    are retained in history. Unverified offline candidates are strictly excluded.
-    """
     def __init__(self, filepath: str = HISTORY_FILE):
         self.filepath = filepath
         self.data: Dict[str, Any] = {
@@ -500,7 +489,6 @@ class HistoryManager:
         self.data["last_updated"] = timestamp
         active_keys = set()
 
-        # Update active servers
         for s in active_servers:
             key = f"{s['ip']}:{s['port']}"
             active_keys.add(key)
@@ -561,8 +549,6 @@ class HistoryManager:
             if len(srv_data["metrics"]) > MAX_HISTORY_POINTS:
                 srv_data["metrics"] = srv_data["metrics"][-MAX_HISTORY_POINTS:]
 
-        # Mark previously recorded servers that are currently offline
-        # STRICT PURGE: Remove any server that has NEVER been active!
         keys_to_purge = []
         for key, srv_data in list(self.data["servers"].items()):
             if key not in active_keys:
@@ -583,7 +569,6 @@ class HistoryManager:
         for k in keys_to_purge:
             del self.data["servers"][k]
 
-        # Global history snapshot
         total_users = sum(s.get("users", 0) for s in active_servers)
         total_files = sum(s.get("files", 0) for s in active_servers)
         self.data["global_history"].append({
@@ -655,7 +640,7 @@ def generate_txt(filepath: str, servers: List[Dict[str, Any]]) -> None:
             f.write(f"{s['ip']}:{s['port']}\n")
 
 def generate_html(filepath: str, active_servers: List[Dict[str, Any]], history_data: Dict[str, Any], stats: Dict[str, Any]) -> None:
-    """Generates a responsive Glassmorphism web portal with language selector positioned in top navbar with high z-index."""
+    """Generates web portal with default sort by indexed files and 2-line hard/soft limits."""
     now_utc = stats["last_updated_utc"]
 
     total_users = sum(s.get("users", 0) for s in active_servers)
@@ -879,7 +864,15 @@ def generate_html(filepath: str, active_servers: List[Dict[str, Any]], history_d
         .badge-version {{ background: rgba(99, 102, 241, 0.15); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.3); }}
         .badge-status-online {{ background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }}
         .badge-status-offline {{ background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }}
-        .badge-limit {{ background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-card); font-size: 11px; }}
+        
+        /* 2-LINE LIMITS BADGES STACKED VERTICALLY */
+        .limits-stack {{
+            display: flex; flex-direction: column; gap: 3px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+        }}
+        .badge-limit-line {{
+            background: rgba(255, 255, 255, 0.05); color: var(--text-main);
+            border: 1px solid var(--border-card); padding: 2px 6px; border-radius: var(--radius-sm); width: fit-content;
+        }}
 
         .num-font {{ font-family: 'JetBrains Mono', monospace; font-size: 13px; }}
         .flag-icon {{ border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); vertical-align: middle; }}
@@ -900,7 +893,7 @@ def generate_html(filepath: str, active_servers: List[Dict[str, Any]], history_d
         }}
         .btn-action-history:hover {{ background: rgba(6, 182, 212, 0.2); border-color: var(--accent-cyan); }}
 
-        /* --- INSTRUCTIONS & FOOTER --- */
+        /* --- INSTRUCTIONS --- */
         .instructions-card {{
             margin-top: 32px; background: var(--bg-card); backdrop-filter: blur(12px);
             border: 1px solid var(--border-card); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--glass-shadow);
@@ -1061,7 +1054,7 @@ def generate_html(filepath: str, active_servers: List[Dict[str, Any]], history_d
             </div>
         </div>
 
-        <!-- MAIN SERVER TABLE -->
+        <!-- MAIN SERVER TABLE (DEFAULT SORT BY INDEXED FILES) -->
         <div class="table-card">
             <div class="table-responsive">
                 <table id="server-table">
@@ -1195,7 +1188,7 @@ def generate_html(filepath: str, active_servers: List[Dict[str, Any]], history_d
                 heroTitle: "File server.met Auto-Aggiornante per eMule", updated: "Ultima scansione:",
                 btnDownload: "Scarica server.met", btnCopyUrl: "Copia URL server.met", btnCopyEd2k: "Copia Link eD2k", btnTrends: "Tendenze Rete",
                 thGeo: "Geo ↕", thName: "Nome Server e Descrizione ↕", thIp: "IP:Porta ↕",
-                thUsers: "Utenti / Capacità ↕", thFiles: "File Indicizzati ↕", thLimits: "Limiti File per Utente ↕", thVer: "Versione ↕", thAction: "Aziones",
+                thUsers: "Utenti / Capacità ↕", thFiles: "File Indicizzati ↕", thLimits: "Limiti File per Utente ↕", thVer: "Versione ↕", thAction: "Azioni",
                 instTitle: "💡 Come usare questo elenco in eMule / aMule",
                 inst1: "Copia l'URL diretto di server.met:", inst2: "Apri le preferenze di eMule → Scheda Server.",
                 inst3: "Incolla l'URL in 'Aggiorna server.met da URL'.", inst4: "Clicca su '📈 Tendenze' per visualizzare i grafici storici.",
@@ -1206,8 +1199,8 @@ def generate_html(filepath: str, active_servers: List[Dict[str, Any]], history_d
         let currentLang = 'en';
         let currentTab = 'active';
         let currentServersList = [];
-        let currentSortCol = 3;
-        let sortAsc = false;
+        let currentSortCol = 4; // DEFAULT SORT BY INDEXED FILES (COLUMN 4)
+        let sortAsc = false;   // DESCENDING BY DEFAULT
         let globalUsersChart = null;
         let globalFilesChart = null;
         let serverUsersChart = null;
@@ -1219,6 +1212,7 @@ def generate_html(filepath: str, active_servers: List[Dict[str, Any]], history_d
             document.getElementById('met-url-display').innerText = metUrl;
             
             buildServerList();
+            sortTable(4, false); // Default sort by Indexed Files descending
             renderTable();
 
             document.addEventListener('click', function(e) {{
@@ -1264,11 +1258,17 @@ def generate_html(filepath: str, active_servers: List[Dict[str, Any]], history_d
                 const descDisplay = s.description && s.description !== 'N/A' ? escapeHtml(s.description) : 'N/A';
                 const verDisplay = s.version && s.version !== 'N/A' ? escapeHtml(s.version) : 'N/A';
 
+                // 2-LINE FORMATTING FOR HARD / SOFT LIMITS
                 let limitsHtml = '<span class="badge badge-limit">N/A</span>';
                 if (s.soft_files || s.hard_files) {{
                     const softText = s.soft_files ? formatNum(s.soft_files) : 'N/A';
                     const hardText = s.hard_files ? formatNum(s.hard_files) : 'N/A';
-                    limitsHtml = `<span class="badge badge-limit" title="Soft limit: ${{softText}} files | Hard limit: ${{hardText}} files">Soft: ${{softText}} / Hard: ${{hardText}}</span>`;
+                    limitsHtml = `
+                        <div class="limits-stack">
+                            <span class="badge-limit-line">Soft: ${{softText}}</span>
+                            <span class="badge-limit-line">Hard: ${{hardText}}</span>
+                        </div>
+                    `;
                 }}
 
                 const tr = document.createElement('tr');
@@ -1333,7 +1333,7 @@ def generate_html(filepath: str, active_servers: List[Dict[str, Any]], history_d
                     case 4: valA = a.files || 0; valB = b.files || 0; break;
                     case 5: valA = a.hard_files || a.soft_files || 9999999; valB = b.hard_files || b.soft_files || 9999999; break;
                     case 6: valA = a.version || ''; valB = b.version || ''; break;
-                    default: valA = a.users || 0; valB = b.users || 0;
+                    default: valA = a.files || 0; valB = b.files || 0;
                 }}
                 if (valA < valB) return sortAsc ? -1 : 1;
                 if (valA > valB) return sortAsc ? 1 : -1;
@@ -1682,8 +1682,8 @@ def main() -> None:
     history_mgr.update(active_servers, candidate_servers, now_utc)
     history_mgr.save()
 
-    # 7. Sort active servers by Users descending
-    active_servers.sort(key=lambda s: (s.get("users", 0), s.get("files", 0)), reverse=True)
+    # 7. Sort active servers by Indexed Files descending by default
+    active_servers.sort(key=lambda s: (s.get("files", 0), s.get("users", 0)), reverse=True)
 
     # 8. Generate Output Files
     print("\n--- Generating Directory Artefacts ---")
