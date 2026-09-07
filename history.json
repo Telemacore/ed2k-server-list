@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-06 19:54:32",
+  "last_updated": "2026-09-07 02:33:19",
   "global_history": [
     {
       "timestamp": "2026-08-04 11:31:46",
@@ -774,6 +774,12 @@
       "active_servers": 35,
       "total_users": 112042,
       "total_files": 58417746
+    },
+    {
+      "timestamp": "2026-09-07 02:33:19",
+      "active_servers": 35,
+      "total_users": 92324,
+      "total_files": 46934758
     }
   ],
   "servers": {
@@ -782,7 +788,7 @@
       "port": 43333,
       "key": "145.14.131.254:43333",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Astra-4",
       "description": "Astra-4 Server",
@@ -790,8 +796,8 @@
       "country_code": "CR",
       "country_name": "Costa Rica",
       "flag": "<img src=\"https://flagcdn.io/cr.svg\" width=\"22\" height=\"15\" alt=\"CR\" class=\"flag-icon\" title=\"Costa Rica\">",
-      "users": 132,
-      "files": 129032,
+      "users": 97,
+      "files": 94222,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -1581,6 +1587,12 @@
           "users": 132,
           "files": 129032,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 97,
+          "files": 94222,
+          "status": "online"
         }
       ]
     },
@@ -1589,7 +1601,7 @@
       "port": 6082,
       "key": "85.17.116.222:6082",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "ed2k-rust",
       "description": "main server",
@@ -1597,8 +1609,8 @@
       "country_code": "NL",
       "country_name": "The Netherlands",
       "flag": "<img src=\"https://flagcdn.io/nl.svg\" width=\"22\" height=\"15\" alt=\"NL\" class=\"flag-icon\" title=\"The Netherlands\">",
-      "users": 7981,
-      "files": 3659447,
+      "users": 8322,
+      "files": 3220824,
       "max_users": 50000,
       "soft_files": 999999,
       "hard_files": 1000000,
@@ -2388,6 +2400,12 @@
           "users": 7981,
           "files": 3659447,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 8322,
+          "files": 3220824,
+          "status": "online"
         }
       ]
     },
@@ -2396,7 +2414,7 @@
       "port": 56612,
       "key": "85.137.248.210:56612",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "aMule Server",
       "description": "NL-Server",
@@ -2404,8 +2422,8 @@
       "country_code": "NL",
       "country_name": "The Netherlands",
       "flag": "<img src=\"https://flagcdn.io/nl.svg\" width=\"22\" height=\"15\" alt=\"NL\" class=\"flag-icon\" title=\"The Netherlands\">",
-      "users": 1585,
-      "files": 994831,
+      "users": 1276,
+      "files": 810811,
       "max_users": 100000,
       "soft_files": 1000000,
       "hard_files": 10000000,
@@ -3195,6 +3213,12 @@
           "users": 1585,
           "files": 994831,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 1276,
+          "files": 810811,
+          "status": "online"
         }
       ]
     },
@@ -3203,7 +3227,7 @@
       "port": 4232,
       "key": "213.141.198.207:4232",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Mazinga Server",
       "description": "Mazinga High-performance eDonkey server",
@@ -3211,8 +3235,8 @@
       "country_code": "ES",
       "country_name": "Spain",
       "flag": "<img src=\"https://flagcdn.io/es.svg\" width=\"22\" height=\"15\" alt=\"ES\" class=\"flag-icon\" title=\"Spain\">",
-      "users": 3784,
-      "files": 1447420,
+      "users": 3332,
+      "files": 1129903,
       "max_users": 50000,
       "soft_files": 6000,
       "hard_files": 12000,
@@ -4002,6 +4026,12 @@
           "users": 3784,
           "files": 1447420,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 3332,
+          "files": 1129903,
+          "status": "online"
         }
       ]
     },
@@ -4010,7 +4040,7 @@
       "port": 47111,
       "key": "37.143.128.252:47111",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Holy Donkey 1",
       "description": "Holy Donkey 1 Server",
@@ -4018,8 +4048,8 @@
       "country_code": "CL",
       "country_name": "Chile",
       "flag": "<img src=\"https://flagcdn.io/cl.svg\" width=\"22\" height=\"15\" alt=\"CL\" class=\"flag-icon\" title=\"Chile\">",
-      "users": 120,
-      "files": 110783,
+      "users": 95,
+      "files": 48334,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -4809,6 +4839,12 @@
           "users": 120,
           "files": 110783,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 95,
+          "files": 48334,
+          "status": "online"
         }
       ]
     },
@@ -4817,7 +4853,7 @@
       "port": 4232,
       "key": "91.208.162.87:4232",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "!! Sharing-Devils No.4 !!",
       "description": "https://forum.sharing-devils.to",
@@ -4825,8 +4861,8 @@
       "country_code": "MD",
       "country_name": "Moldova",
       "flag": "<img src=\"https://flagcdn.io/md.svg\" width=\"22\" height=\"15\" alt=\"MD\" class=\"flag-icon\" title=\"Moldova\">",
-      "users": 7451,
-      "files": 4185229,
+      "users": 5820,
+      "files": 3105629,
       "max_users": 10000,
       "soft_files": 1000000,
       "hard_files": 1000001,
@@ -5616,6 +5652,12 @@
           "users": 7451,
           "files": 4185229,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 5820,
+          "files": 3105629,
+          "status": "online"
         }
       ]
     },
@@ -5624,7 +5666,7 @@
       "port": 9197,
       "key": "147.78.2.254:9197",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "eDonkey Server 3",
       "description": "eDonkey Server 3",
@@ -5632,8 +5674,8 @@
       "country_code": "IL",
       "country_name": "Israel",
       "flag": "<img src=\"https://flagcdn.io/il.svg\" width=\"22\" height=\"15\" alt=\"IL\" class=\"flag-icon\" title=\"Israel\">",
-      "users": 202,
-      "files": 114062,
+      "users": 158,
+      "files": 67695,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -6422,6 +6464,12 @@
           "timestamp": "2026-09-06 19:54:32",
           "users": 202,
           "files": 114062,
+          "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 158,
+          "files": 67695,
           "status": "online"
         }
       ]
@@ -7230,6 +7278,12 @@
           "users": 0,
           "files": 0,
           "status": "offline"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 0,
+          "files": 0,
+          "status": "offline"
         }
       ]
     },
@@ -7238,7 +7292,7 @@
       "port": 4725,
       "key": "176.123.5.89:4725",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "eMule Sunrise",
       "description": "Not perfect, but real",
@@ -7246,8 +7300,8 @@
       "country_code": "MD",
       "country_name": "Moldova",
       "flag": "<img src=\"https://flagcdn.io/md.svg\" width=\"22\" height=\"15\" alt=\"MD\" class=\"flag-icon\" title=\"Moldova\">",
-      "users": 49648,
-      "files": 20867991,
+      "users": 39852,
+      "files": 15921229,
       "max_users": 50000,
       "soft_files": 10000,
       "hard_files": 12000,
@@ -8037,6 +8091,12 @@
           "users": 49648,
           "files": 20867991,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 39852,
+          "files": 15921229,
+          "status": "online"
         }
       ]
     },
@@ -8045,7 +8105,7 @@
       "port": 4232,
       "key": "91.208.162.182:4232",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "MO-Server",
       "description": "!NFO-Server",
@@ -8053,8 +8113,8 @@
       "country_code": "MD",
       "country_name": "Moldova",
       "flag": "<img src=\"https://flagcdn.io/md.svg\" width=\"22\" height=\"15\" alt=\"MD\" class=\"flag-icon\" title=\"Moldova\">",
-      "users": 5674,
-      "files": 2471688,
+      "users": 5448,
+      "files": 2099052,
       "max_users": 1000000,
       "soft_files": 1000000,
       "hard_files": 10000000,
@@ -8844,6 +8904,12 @@
           "users": 5674,
           "files": 2471688,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 5448,
+          "files": 2099052,
+          "status": "online"
         }
       ]
     },
@@ -8852,7 +8918,7 @@
       "port": 9197,
       "key": "91.148.135.254:9197",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "eDonkey Server 1",
       "description": "eDonkey Server 1",
@@ -8860,11 +8926,11 @@
       "country_code": "CY",
       "country_name": "Cyprus",
       "flag": "<img src=\"https://flagcdn.io/cy.svg\" width=\"22\" height=\"15\" alt=\"CY\" class=\"flag-icon\" title=\"Cyprus\">",
-      "users": 0,
-      "files": 0,
-      "max_users": null,
-      "soft_files": null,
-      "hard_files": null,
+      "users": 177,
+      "files": 127176,
+      "max_users": 300000,
+      "soft_files": 1000000,
+      "hard_files": 5000000,
       "name_history": [
         {
           "timestamp": "2026-08-04 11:31:46",
@@ -9651,6 +9717,12 @@
           "users": 0,
           "files": 0,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 177,
+          "files": 127176,
+          "status": "online"
         }
       ]
     },
@@ -9659,7 +9731,7 @@
       "port": 42011,
       "key": "223.165.4.251:42011",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Pentium Pilat 2023",
       "description": "Pentium Pilat 2023",
@@ -9667,8 +9739,8 @@
       "country_code": "TW",
       "country_name": "Taiwan",
       "flag": "<img src=\"https://flagcdn.io/tw.svg\" width=\"22\" height=\"15\" alt=\"TW\" class=\"flag-icon\" title=\"Taiwan\">",
-      "users": 221,
-      "files": 213688,
+      "users": 192,
+      "files": 183337,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -10458,6 +10530,12 @@
           "users": 221,
           "files": 213688,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 192,
+          "files": 183337,
+          "status": "online"
         }
       ]
     },
@@ -10466,7 +10544,7 @@
       "port": 4232,
       "key": "85.121.5.137:4232",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "!! Sharing-Devils No.2 !!",
       "description": "https://forum.sharing-devils.to",
@@ -10474,8 +10552,8 @@
       "country_code": "MD",
       "country_name": "Moldova",
       "flag": "<img src=\"https://flagcdn.io/md.svg\" width=\"22\" height=\"15\" alt=\"MD\" class=\"flag-icon\" title=\"Moldova\">",
-      "users": 5757,
-      "files": 3534916,
+      "users": 4172,
+      "files": 2655247,
       "max_users": 10000,
       "soft_files": 1000000,
       "hard_files": 1000001,
@@ -11265,6 +11343,12 @@
           "users": 5757,
           "files": 3534916,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 4172,
+          "files": 2655247,
+          "status": "online"
         }
       ]
     },
@@ -11273,7 +11357,7 @@
       "port": 48617,
       "key": "103.75.116.41:48617",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "eMule Angel",
       "description": "eMule Angel",
@@ -11281,8 +11365,8 @@
       "country_code": "MY",
       "country_name": "Malaysia",
       "flag": "<img src=\"https://flagcdn.io/my.svg\" width=\"22\" height=\"15\" alt=\"MY\" class=\"flag-icon\" title=\"Malaysia\">",
-      "users": 140,
-      "files": 52223,
+      "users": 113,
+      "files": 46883,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -12072,6 +12156,12 @@
           "users": 140,
           "files": 52223,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 113,
+          "files": 46883,
+          "status": "online"
         }
       ]
     },
@@ -12080,7 +12170,7 @@
       "port": 37980,
       "key": "185.255.123.22:37980",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Freedom for Donkeys",
       "description": "Freedom for Donkeys",
@@ -12088,8 +12178,8 @@
       "country_code": "NG",
       "country_name": "Nigeria",
       "flag": "<img src=\"https://flagcdn.io/ng.svg\" width=\"22\" height=\"15\" alt=\"NG\" class=\"flag-icon\" title=\"Nigeria\">",
-      "users": 195,
-      "files": 180493,
+      "users": 150,
+      "files": 153636,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -12879,6 +12969,12 @@
           "users": 195,
           "files": 180493,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 150,
+          "files": 153636,
+          "status": "online"
         }
       ]
     },
@@ -12887,7 +12983,7 @@
       "port": 42011,
       "key": "103.97.203.251:42011",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Pentium Pilat 2022",
       "description": "Pentium Pilat 2022",
@@ -12895,8 +12991,8 @@
       "country_code": "IN",
       "country_name": "India",
       "flag": "<img src=\"https://flagcdn.io/in.svg\" width=\"22\" height=\"15\" alt=\"IN\" class=\"flag-icon\" title=\"India\">",
-      "users": 207,
-      "files": 127912,
+      "users": 162,
+      "files": 120255,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -13686,6 +13782,12 @@
           "users": 207,
           "files": 127912,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 162,
+          "files": 120255,
+          "status": "online"
         }
       ]
     },
@@ -13694,7 +13796,7 @@
       "port": 4661,
       "key": "193.187.90.12:4661",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Drunken Donkey",
       "description": "Everything or Nothing",
@@ -13702,8 +13804,8 @@
       "country_code": "SE",
       "country_name": "Sweden",
       "flag": "<img src=\"https://flagcdn.io/se.svg\" width=\"22\" height=\"15\" alt=\"SE\" class=\"flag-icon\" title=\"Sweden\">",
-      "users": 982,
-      "files": 355450,
+      "users": 693,
+      "files": 272110,
       "max_users": 131072,
       "soft_files": 6000,
       "hard_files": 10000,
@@ -14493,6 +14595,12 @@
           "users": 982,
           "files": 355450,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 693,
+          "files": 272110,
+          "status": "online"
         }
       ]
     },
@@ -14501,7 +14609,7 @@
       "port": 47111,
       "key": "91.148.135.252:47111",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Holy Donkey 3",
       "description": "Holy Donkey 3 Server",
@@ -14509,8 +14617,8 @@
       "country_code": "CY",
       "country_name": "Cyprus",
       "flag": "<img src=\"https://flagcdn.io/cy.svg\" width=\"22\" height=\"15\" alt=\"CY\" class=\"flag-icon\" title=\"Cyprus\">",
-      "users": 190,
-      "files": 169231,
+      "users": 137,
+      "files": 162351,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -15300,6 +15408,12 @@
           "users": 190,
           "files": 169231,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 137,
+          "files": 162351,
+          "status": "online"
         }
       ]
     },
@@ -15308,7 +15422,7 @@
       "port": 4232,
       "key": "212.95.35.240:4232",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "eMule Cosmic",
       "description": "We are not alone",
@@ -15316,8 +15430,8 @@
       "country_code": "DE",
       "country_name": "Germany",
       "flag": "<img src=\"https://flagcdn.io/de.svg\" width=\"22\" height=\"15\" alt=\"DE\" class=\"flag-icon\" title=\"Germany\">",
-      "users": 2096,
-      "files": 1504261,
+      "users": 1516,
+      "files": 1287777,
       "max_users": 100000,
       "soft_files": 1000000,
       "hard_files": 10000000,
@@ -16111,6 +16225,12 @@
           "users": 2096,
           "files": 1504261,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 1516,
+          "files": 1287777,
+          "status": "online"
         }
       ]
     },
@@ -16119,7 +16239,7 @@
       "port": 4232,
       "key": "143.246.192.192:4232",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "eMule Nordic",
       "description": "!NFO-Server",
@@ -16127,8 +16247,8 @@
       "country_code": "SE",
       "country_name": "Sweden",
       "flag": "<img src=\"https://flagcdn.io/se.svg\" width=\"22\" height=\"15\" alt=\"SE\" class=\"flag-icon\" title=\"Sweden\">",
-      "users": 978,
-      "files": 684741,
+      "users": 747,
+      "files": 615077,
       "max_users": 100000,
       "soft_files": 1000000,
       "hard_files": 10000000,
@@ -16926,6 +17046,12 @@
           "users": 978,
           "files": 684741,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 747,
+          "files": 615077,
+          "status": "online"
         }
       ]
     },
@@ -16934,7 +17060,7 @@
       "port": 58612,
       "key": "85.137.248.210:58612",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "MO-ad-free",
       "description": "NL-Server",
@@ -16942,8 +17068,8 @@
       "country_code": "NL",
       "country_name": "The Netherlands",
       "flag": "<img src=\"https://flagcdn.io/nl.svg\" width=\"22\" height=\"15\" alt=\"NL\" class=\"flag-icon\" title=\"The Netherlands\">",
-      "users": 962,
-      "files": 504362,
+      "users": 748,
+      "files": 447780,
       "max_users": 100000,
       "soft_files": 1000000,
       "hard_files": 10000000,
@@ -17733,6 +17859,12 @@
           "users": 962,
           "files": 504362,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 748,
+          "files": 447780,
+          "status": "online"
         }
       ]
     },
@@ -17741,7 +17873,7 @@
       "port": 9197,
       "key": "31.40.212.254:9197",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "eDonkey Server 2",
       "description": "eDonkey Server 2",
@@ -17749,8 +17881,8 @@
       "country_code": "AR",
       "country_name": "Argentina",
       "flag": "<img src=\"https://flagcdn.io/ar.svg\" width=\"22\" height=\"15\" alt=\"AR\" class=\"flag-icon\" title=\"Argentina\">",
-      "users": 217,
-      "files": 273796,
+      "users": 167,
+      "files": 292239,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -18540,6 +18672,12 @@
           "users": 217,
           "files": 273796,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 167,
+          "files": 292239,
+          "status": "online"
         }
       ]
     },
@@ -18548,7 +18686,7 @@
       "port": 18357,
       "key": "185.25.48.89:18357",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Akteon Server",
       "description": "Akteon Server",
@@ -18556,8 +18694,8 @@
       "country_code": "LT",
       "country_name": "Lithuania",
       "flag": "<img src=\"https://flagcdn.io/lt.svg\" width=\"22\" height=\"15\" alt=\"LT\" class=\"flag-icon\" title=\"Lithuania\">",
-      "users": 2635,
-      "files": 1506563,
+      "users": 1986,
+      "files": 1341303,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -19347,6 +19485,12 @@
           "users": 2635,
           "files": 1506563,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 1986,
+          "files": 1341303,
+          "status": "online"
         }
       ]
     },
@@ -19355,7 +19499,7 @@
       "port": 4232,
       "key": "57.131.35.107:4232",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "MO-ad-free",
       "description": "IT-Server",
@@ -19363,8 +19507,8 @@
       "country_code": "IT",
       "country_name": "Italy",
       "flag": "<img src=\"https://flagcdn.io/it.svg\" width=\"22\" height=\"15\" alt=\"IT\" class=\"flag-icon\" title=\"Italy\">",
-      "users": 1668,
-      "files": 1122498,
+      "users": 1368,
+      "files": 963691,
       "max_users": 1000000,
       "soft_files": 1000000,
       "hard_files": 10000000,
@@ -20154,6 +20298,12 @@
           "users": 1668,
           "files": 1122498,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 1368,
+          "files": 963691,
+          "status": "online"
         }
       ]
     },
@@ -20162,7 +20312,7 @@
       "port": 33333,
       "key": "213.252.245.239:33333",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Astra-5",
       "description": "Astra-5 Server",
@@ -20170,8 +20320,8 @@
       "country_code": "LT",
       "country_name": "Lithuania",
       "flag": "<img src=\"https://flagcdn.io/lt.svg\" width=\"22\" height=\"15\" alt=\"LT\" class=\"flag-icon\" title=\"Lithuania\">",
-      "users": 2173,
-      "files": 1057479,
+      "users": 1524,
+      "files": 742583,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -20961,6 +21111,12 @@
           "users": 2173,
           "files": 1057479,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 1524,
+          "files": 742583,
+          "status": "online"
         }
       ]
     },
@@ -20969,7 +21125,7 @@
       "port": 18357,
       "key": "147.78.0.252:18357",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Akteon Server No8",
       "description": "Akteon Server No8",
@@ -20977,8 +21133,8 @@
       "country_code": "AE",
       "country_name": "United Arab Emirates",
       "flag": "<img src=\"https://flagcdn.io/ae.svg\" width=\"22\" height=\"15\" alt=\"AE\" class=\"flag-icon\" title=\"United Arab Emirates\">",
-      "users": 359,
-      "files": 350687,
+      "users": 307,
+      "files": 348356,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -21768,6 +21924,12 @@
           "users": 359,
           "files": 350687,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 307,
+          "files": 348356,
+          "status": "online"
         }
       ]
     },
@@ -21776,7 +21938,7 @@
       "port": 18357,
       "key": "91.148.135.253:18357",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Akteon Server No3",
       "description": "Akteon Server No3",
@@ -21784,8 +21946,8 @@
       "country_code": "CY",
       "country_name": "Cyprus",
       "flag": "<img src=\"https://flagcdn.io/cy.svg\" width=\"22\" height=\"15\" alt=\"CY\" class=\"flag-icon\" title=\"Cyprus\">",
-      "users": 143,
-      "files": 183288,
+      "users": 107,
+      "files": 102284,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -22575,6 +22737,12 @@
           "users": 143,
           "files": 183288,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 107,
+          "files": 102284,
+          "status": "online"
         }
       ]
     },
@@ -22583,7 +22751,7 @@
       "port": 43333,
       "key": "213.252.245.239:43333",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Astra-3",
       "description": "Astra-3 Server",
@@ -22591,8 +22759,8 @@
       "country_code": "LT",
       "country_name": "Lithuania",
       "flag": "<img src=\"https://flagcdn.io/lt.svg\" width=\"22\" height=\"15\" alt=\"LT\" class=\"flag-icon\" title=\"Lithuania\">",
-      "users": 3250,
-      "files": 2193591,
+      "users": 2545,
+      "files": 1702597,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -23382,6 +23550,12 @@
           "users": 3250,
           "files": 2193591,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 2545,
+          "files": 1702597,
+          "status": "online"
         }
       ]
     },
@@ -23390,7 +23564,7 @@
       "port": 4232,
       "key": "77.42.68.79:4232",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Nordic Server",
       "description": "FIN Server",
@@ -23398,8 +23572,8 @@
       "country_code": "FI",
       "country_name": "Finland",
       "flag": "<img src=\"https://flagcdn.io/fi.svg\" width=\"22\" height=\"15\" alt=\"FI\" class=\"flag-icon\" title=\"Finland\">",
-      "users": 10133,
-      "files": 8958182,
+      "users": 8606,
+      "files": 7806332,
       "max_users": 1000000,
       "soft_files": 1000000,
       "hard_files": 10000000,
@@ -24189,6 +24363,12 @@
           "users": 10133,
           "files": 8958182,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 8606,
+          "files": 7806332,
+          "status": "online"
         }
       ]
     },
@@ -24197,7 +24377,7 @@
       "port": 47111,
       "key": "185.186.77.252:47111",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Holy Donkey 2",
       "description": "Holy Donkey 2 Server",
@@ -24205,8 +24385,8 @@
       "country_code": "AL",
       "country_name": "Albania",
       "flag": "<img src=\"https://flagcdn.io/al.svg\" width=\"22\" height=\"15\" alt=\"AL\" class=\"flag-icon\" title=\"Albania\">",
-      "users": 142,
-      "files": 90524,
+      "users": 105,
+      "files": 90086,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -24996,6 +25176,12 @@
           "users": 142,
           "files": 90524,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 105,
+          "files": 90086,
+          "status": "online"
         }
       ]
     },
@@ -25004,7 +25190,7 @@
       "port": 31031,
       "key": "185.237.185.226:31031",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Gaal",
       "description": "Gaal Server",
@@ -25012,8 +25198,8 @@
       "country_code": "LT",
       "country_name": "Lithuania",
       "flag": "<img src=\"https://flagcdn.io/lt.svg\" width=\"22\" height=\"15\" alt=\"LT\" class=\"flag-icon\" title=\"Lithuania\">",
-      "users": 252,
-      "files": 289451,
+      "users": 202,
+      "files": 199519,
       "max_users": 300000,
       "soft_files": 1000000,
       "hard_files": 5000000,
@@ -25802,6 +25988,12 @@
           "timestamp": "2026-09-06 19:54:32",
           "users": 252,
           "files": 289451,
+          "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 202,
+          "files": 199519,
           "status": "online"
         }
       ]
@@ -26610,6 +26802,12 @@
           "users": 0,
           "files": 0,
           "status": "offline"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 0,
+          "files": 0,
+          "status": "offline"
         }
       ]
     },
@@ -26618,7 +26816,7 @@
       "port": 4232,
       "key": "141.227.165.99:4232",
       "first_seen": "2026-08-04 11:31:46",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "MO-ad-free",
       "description": "AT-Server",
@@ -26626,8 +26824,8 @@
       "country_code": "AT",
       "country_name": "Austria",
       "flag": "<img src=\"https://flagcdn.io/at.svg\" width=\"22\" height=\"15\" alt=\"AT\" class=\"flag-icon\" title=\"Austria\">",
-      "users": 2125,
-      "files": 866288,
+      "users": 1771,
+      "files": 661792,
       "max_users": 1000000,
       "soft_files": 1000000,
       "hard_files": 10000000,
@@ -27417,6 +27615,12 @@
           "users": 2125,
           "files": 866288,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 1771,
+          "files": 661792,
+          "status": "online"
         }
       ]
     },
@@ -27425,7 +27629,7 @@
       "port": 4321,
       "key": "91.119.202.44:4321",
       "first_seen": "2026-08-04 19:25:14",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Hugo1",
       "description": "Hugo 1",
@@ -27433,8 +27637,8 @@
       "country_code": "AT",
       "country_name": "Austria",
       "flag": "<img src=\"https://flagcdn.io/at.svg\" width=\"22\" height=\"15\" alt=\"AT\" class=\"flag-icon\" title=\"Austria\">",
-      "users": 78,
-      "files": 9312,
+      "users": 61,
+      "files": 7721,
       "max_users": 1500,
       "soft_files": 500000,
       "hard_files": 1000000,
@@ -28212,6 +28416,12 @@
           "users": 78,
           "files": 9312,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 61,
+          "files": 7721,
+          "status": "online"
         }
       ]
     },
@@ -28220,7 +28430,7 @@
       "port": 5687,
       "key": "91.126.170.253:5687",
       "first_seen": "2026-08-08 18:30:26",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "Emule Sentinel",
       "description": "Always with you",
@@ -28228,8 +28438,8 @@
       "country_code": "ES",
       "country_name": "Spain",
       "flag": "<img src=\"https://flagcdn.io/es.svg\" width=\"22\" height=\"15\" alt=\"ES\" class=\"flag-icon\" title=\"Spain\">",
-      "users": 552,
-      "files": 208106,
+      "users": 358,
+      "files": 106895,
       "max_users": 50000,
       "soft_files": 50000,
       "hard_files": 100000,
@@ -28919,6 +29129,12 @@
           "users": 552,
           "files": 208106,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 358,
+          "files": 106895,
+          "status": "online"
         }
       ]
     },
@@ -28927,7 +29143,7 @@
       "port": 4235,
       "key": "141.227.139.101:4235",
       "first_seen": "2026-08-20 12:38:00",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "N/A",
       "description": "N/A",
@@ -28935,8 +29151,8 @@
       "country_code": "CH",
       "country_name": "Switzerland",
       "flag": "<img src=\"https://flagcdn.io/ch.svg\" width=\"22\" height=\"15\" alt=\"CH\" class=\"flag-icon\" title=\"Switzerland\">",
-      "users": 2,
-      "files": 193,
+      "users": 1,
+      "files": 0,
       "max_users": 40000,
       "soft_files": 1000000,
       "hard_files": 1000000,
@@ -29326,6 +29542,12 @@
           "users": 2,
           "files": 193,
           "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 1,
+          "files": 0,
+          "status": "online"
         }
       ]
     },
@@ -29334,7 +29556,7 @@
       "port": 4235,
       "key": "91.208.162.55:4235",
       "first_seen": "2026-08-21 12:36:52",
-      "last_seen": "2026-09-06 19:54:32",
+      "last_seen": "2026-09-07 02:33:19",
       "status": "online",
       "name": "N/A",
       "description": "N/A",
@@ -29342,8 +29564,8 @@
       "country_code": "MD",
       "country_name": "Moldova",
       "flag": "<img src=\"https://flagcdn.io/md.svg\" width=\"22\" height=\"15\" alt=\"MD\" class=\"flag-icon\" title=\"Moldova\">",
-      "users": 8,
-      "files": 28,
+      "users": 9,
+      "files": 32,
       "max_users": 40000,
       "soft_files": 1000000,
       "hard_files": 1000000,
@@ -29708,6 +29930,12 @@
           "timestamp": "2026-09-06 19:54:32",
           "users": 8,
           "files": 28,
+          "status": "online"
+        },
+        {
+          "timestamp": "2026-09-07 02:33:19",
+          "users": 9,
+          "files": 32,
           "status": "online"
         }
       ]
